@@ -2,36 +2,28 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width,
-                   initial-scale=1.0,
-                   maximum-scale=1.0,
-                   user-scalable=no">
-
-    <title>Bee Runner</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bee Runner 3D</title>
     <style>
         * {
             box-sizing: border-box;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-
-        html, body {
             margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body, html {
             width: 100%;
             height: 100%;
             overflow: hidden;
             background: #87ceeb;
-            touch-action: none;
+            font-family: Arial, sans-serif;
         }
-
-        canvas {
-            display: block;
+        #game-container {
             width: 100vw;
             height: 100vh;
+            display: block;
         }
-
         #hud {
             position: fixed;
             top: 20px;
@@ -39,19 +31,18 @@
             right: 20px;
             display: flex;
             justify-content: space-between;
-            font-family: Arial, sans-serif;
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
             color: white;
-            text-shadow: 2px 2px 4px #000;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.7);
             pointer-events: none;
+            z-index: 10;
         }
     </style>
+    <!-- Three.js Bibliothek einbinden -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
-
 <body>
-
-<canvas id="game"></canvas>
 
 <div id="hud">
     <div>🍯 <span id="honey">0</span></div>
@@ -59,422 +50,205 @@
     <div>❤️ <span id="lives">3</span></div>
 </div>
 
+<div id="game-container"></div>
+
 <script>
+// ==========================================
+// 1. SZENE, KAMERA & RENDERER SETUP
+// ==========================================
+const container = document.getElementById('game-container');
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb); // Himmelblau
+scene.fog = new THREE.FogExp2(0x87ceeb, 0.015); // Sanfter Nebel in der Ferne
 
-let width;
-let height;
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+// Kamera leicht hinter und über der Biene platzieren (Subway Surfers Look)
+camera.position.set(0, 3.5, 6);
+camera.rotation.x = -0.2;
 
-function resize() {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
-}
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+container.appendChild(renderer.domElement);
 
-window.addEventListener("resize", resize);
-resize();
+// ==========================================
+// 2. BELEUCHTUNG (Sonne & Schatten)
+// ==========================================
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+scene.add(ambientLight);
 
+const sunLight = new THREE.DirectionalLight(0xfffaed, 1.2);
+sunLight.position.set(5, 12, 5);
+sunLight.castShadow = true;
+sunLight.shadow.mapSize.width = 1024;
+sunLight.shadow.mapSize.height = 1024;
+scene.add(sunLight);
 
-// ==============================
-// PLAYER
-// ==============================
+// ==========================================
+// 3. FAHRBAHN (Waben-Pfad & Holzleisten)
+// ==========================================
+const lanePositions = [-2, 0, 2]; // X-Koordinaten der 3 Spuren
 
+// Boden-Material (Gold-Gelb mit Glanz)
+const trackMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0xf5b014, 
+    roughness: 0.3,
+    metalness: 0.1 
+});
+
+const trackGeometry = new THREE.PlaneGeometry(7.5, 200);
+const track = new THREE.Mesh(trackGeometry, trackMaterial);
+track.rotation.x = -Math.PI / 2;
+track.position.z = -90;
+track.receiveShadow = true;
+scene.add(track);
+
+// Holzleisten als Spur-Trenner
+const woodMaterial = new THREE.MeshStandardMaterial({ color: 0x5c3a21 });
+[-1, 1].forEach(x => {
+    const railGeometry = new THREE.BoxGeometry(0.2, 0.2, 200);
+    const rail = new THREE.Mesh(railGeometry, woodMaterial);
+    rail.position.set(x, 0.1, -90);
+    rail.castShadow = true;
+    rail.receiveShadow = true;
+    scene.add(rail);
+});
+
+// ==========================================
+// 4. SPIELER (BIENE)
+// ==========================================
+const playerGroup = new THREE.Group();
+
+// Bienen-Körper
+const bodyGeo = new THREE.SphereGeometry(0.6, 16, 16);
+bodyGeo.scale(1, 0.8, 1.2);
+const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffcc00, roughness: 0.4 });
+const body = new THREE.Mesh(bodyGeo, bodyMat);
+body.castShadow = true;
+playerGroup.add(body);
+
+// Flügel (Transparent)
+const wingGeo = new THREE.BufferGeometry();
+const wingMat = new THREE.MeshStandardMaterial({ 
+    color: 0xffffff, 
+    transparent: true, 
+    opacity: 0.7, 
+    roughness: 0.1 
+});
+
+const leftWing = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.05, 0.4), wingMat);
+leftWing.position.set(-0.6, 0.4, 0);
+leftWing.rotation.z = 0.2;
+playerGroup.add(leftWing);
+
+const rightWing = leftWing.clone();
+rightWing.position.x = 0.6;
+rightWing.rotation.z = -0.2;
+playerGroup.add(rightWing);
+
+playerGroup.position.set(0, 1, 0);
+scene.add(playerGroup);
+
+// Spieler-Status
 const player = {
     lane: 1,
-    x: 0,
-    y: 0,
-
-    width: 55,
-    height: 45,
-
     targetX: 0,
-
+    y: 1,
     jumping: false,
     jumpVelocity: 0,
-    gravity: 0.8
+    gravity: -0.015
 };
 
-
-// ==============================
-// GAME
-// ==============================
-
-let honey = 0;
-let coins = 0;
-let lives = 3;
-
-let speed = 7;
-
-let objects = [];
-
-
-// ==============================
-// LANES
-// ==============================
-
-function getLaneX(lane) {
-
-    const laneWidth = width / 3;
-
-    return laneWidth * lane + laneWidth / 2;
-}
-
-
-// ==============================
-// RESET PLAYER POSITION
-// ==============================
-
-function resetPlayer() {
-
-    player.x = getLaneX(player.lane);
-    player.targetX = player.x;
-
-    player.y = height - 150;
-}
-
-resetPlayer();
-
-
-// ==============================
-// LANE MOVEMENT
-// ==============================
-
+// ==========================================
+// 5. STEUERUNG (Tastatur & Touch/Swipe)
+// ==========================================
 function moveLeft() {
-
     if (player.lane > 0) {
         player.lane--;
-        player.targetX = getLaneX(player.lane);
+        player.targetX = lanePositions[player.lane];
     }
 }
 
 function moveRight() {
-
     if (player.lane < 2) {
         player.lane++;
-        player.targetX = getLaneX(player.lane);
+        player.targetX = lanePositions[player.lane];
     }
 }
-
-
-// ==============================
-// JUMP
-// ==============================
 
 function jump() {
-
     if (!player.jumping) {
-
         player.jumping = true;
-        player.jumpVelocity = -15;
+        player.jumpVelocity = 0.28;
     }
 }
 
-
-// ==============================
-// TOUCH CONTROLS
-// ==============================
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'a') moveLeft();
+    if (e.key === 'ArrowRight' || e.key === 'd') moveRight();
+    if (e.key === 'ArrowUp' || e.key === ' ' || e.key === 'w') jump();
+});
 
 let touchStartX = 0;
 let touchStartY = 0;
-
-canvas.addEventListener("touchstart", function(e) {
-
-    const touch = e.touches[0];
-
-    touchStartX = touch.clientX;
-    touchStartY = touch.clientY;
-
-}, { passive: false });
-
-
-canvas.addEventListener("touchend", function(e) {
-
-    const touch = e.changedTouches[0];
-
-    const dx = touch.clientX - touchStartX;
-    const dy = touch.clientY - touchStartY;
-
-    const minSwipe = 40;
-
+window.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+});
+window.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
     if (Math.abs(dx) > Math.abs(dy)) {
-
-        if (dx > minSwipe) {
-            moveRight();
-        }
-
-        else if (dx < -minSwipe) {
-            moveLeft();
-        }
-
+        if (dx > 30) moveRight();
+        else if (dx < -30) moveLeft();
     } else {
-
-        if (dy < -minSwipe) {
-            jump();
-        }
+        if (dy < -30) jump();
     }
-
-}, { passive: false });
-
-
-// ==============================
-// KEYBOARD – FÜR TESTEN
-// ==============================
-
-window.addEventListener("keydown", function(e) {
-
-    if (e.key === "ArrowLeft") {
-        moveLeft();
-    }
-
-    if (e.key === "ArrowRight") {
-        moveRight();
-    }
-
-    if (e.key === "ArrowUp" || e.key === " ") {
-        jump();
-    }
-
 });
 
-
-// ==============================
-// DRAW BACKGROUND
-// ==============================
-
-function drawBackground() {
-
-    // Himmel
-    ctx.fillStyle = "#87ceeb";
-    ctx.fillRect(0, 0, width, height);
-
-    // Wolken
-    ctx.fillStyle = "rgba(255,255,255,0.8)";
-
-    ctx.beginPath();
-    ctx.arc(width * 0.2, height * 0.2, 30, 0, Math.PI * 2);
-    ctx.arc(width * 0.24, height * 0.2, 40, 0, Math.PI * 2);
-    ctx.arc(width * 0.29, height * 0.2, 25, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Boden
-    ctx.fillStyle = "#d99b36";
-    ctx.fillRect(0, height - 100, width, 100);
-
-    // Waben-Linien
-    ctx.strokeStyle = "#f4c95d";
-    ctx.lineWidth = 3;
-
-    const size = 40;
-
-    for (let x = -size; x < width + size; x += size * 1.5) {
-
-        for (let y = height - 100; y < height; y += size * 0.9) {
-
-            ctx.beginPath();
-
-            for (let i = 0; i < 6; i++) {
-
-                const angle = Math.PI / 3 * i;
-
-                const px =
-                    x + Math.cos(angle) * size / 2;
-
-                const py =
-                    y + Math.sin(angle) * size / 2;
-
-                if (i === 0) {
-                    ctx.moveTo(px, py);
-                } else {
-                    ctx.lineTo(px, py);
-                }
-            }
-
-            ctx.closePath();
-            ctx.stroke();
-        }
-    }
-}
-
-
-// ==============================
-// DRAW LANES
-// ==============================
-
-function drawLanes() {
-
-    ctx.strokeStyle = "rgba(255,255,255,0.25)";
-    ctx.lineWidth = 5;
-
-    for (let i = 1; i < 3; i++) {
-
-        const x = width / 3 * i;
-
-        ctx.beginPath();
-        ctx.moveTo(x, height - 100);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-    }
-}
-
-
-// ==============================
-// DRAW BEE
-// ==============================
-
-function drawBee() {
-
-    const x = player.x;
-    const y = player.y;
-
-    // Flügel
-    ctx.fillStyle = "rgba(255,255,255,0.75)";
-
-    ctx.beginPath();
-    ctx.ellipse(
-        x - 18,
-        y - 20,
-        18,
-        12,
-        -0.4,
-        0,
-        Math.PI * 2
-    );
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.ellipse(
-        x + 18,
-        y - 20,
-        18,
-        12,
-        0.4,
-        0,
-        Math.PI * 2
-    );
-    ctx.fill();
-
-    // Körper
-    ctx.fillStyle = "#ffc928";
-
-    ctx.beginPath();
-    ctx.ellipse(
-        x,
-        y,
-        27,
-        22,
-        0,
-        0,
-        Math.PI * 2
-    );
-    ctx.fill();
-
-    // Streifen
-    ctx.strokeStyle = "#222";
-    ctx.lineWidth = 6;
-
-    ctx.beginPath();
-    ctx.moveTo(x - 8, y - 19);
-    ctx.lineTo(x - 8, y + 19);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(x + 8, y - 18);
-    ctx.lineTo(x + 8, y + 18);
-    ctx.stroke();
-
-    // Augen
-    ctx.fillStyle = "#111";
-
-    ctx.beginPath();
-    ctx.arc(x - 10, y - 5, 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(x + 10, y - 5, 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Antennen
-    ctx.strokeStyle = "#111";
-    ctx.lineWidth = 2;
-
-    ctx.beginPath();
-    ctx.moveTo(x - 10, y - 18);
-    ctx.lineTo(x - 17, y - 30);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(x + 10, y - 18);
-    ctx.lineTo(x + 17, y - 30);
-    ctx.stroke();
-}
-
-
-// ==============================
-// UPDATE
-// ==============================
-
+// ==========================================
+// 6. GAME LOOP & UPDATE
+// ==========================================
 function update() {
+    // Sanfte Spurwechsel-Animation (Lerp)
+    playerGroup.position.x += (player.targetX - playerGroup.position.x) * 0.15;
 
-    // Sanfte Spurbewegung
-    player.x +=
-        (player.targetX - player.x) * 0.25;
-
-
-    // Springen
+    // Sprung-Physik
     if (player.jumping) {
-
         player.y += player.jumpVelocity;
-
         player.jumpVelocity += player.gravity;
-
-        const groundY = height - 150;
-
-        if (player.y >= groundY) {
-
-            player.y = groundY;
-
+        if (player.y <= 1) {
+            player.y = 1;
             player.jumping = false;
-            player.jumpVelocity = 0;
         }
     }
+    playerGroup.position.y = player.y;
 
+    // Flügel-Flatter-Animation
+    const wingFlap = Math.sin(Date.now() * 0.03) * 0.2;
+    leftWing.rotation.z = 0.2 + wingFlap;
+    rightWing.rotation.z = -0.2 - wingFlap;
 
-    // Geschwindigkeit langsam erhöhen
-    speed += 0.0005;
+    // Kamera folgt der Biene leicht verzögert
+    camera.position.x = playerGroup.position.x * 0.3;
 }
 
-
-// ==============================
-// DRAW
-// ==============================
-
-function draw() {
-
-    ctx.clearRect(0, 0, width, height);
-
-    drawBackground();
-    drawLanes();
-
-    drawBee();
-}
-
-
-// ==============================
-// GAME LOOP
-// ==============================
-
-function gameLoop() {
-
+function animate() {
+    requestAnimationFrame(animate);
     update();
-    draw();
-
-    requestAnimationFrame(gameLoop);
+    renderer.render(scene, camera);
 }
 
-gameLoop();
+animate();
 
+// Fenster-Skalierung
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
 </script>
-
 </body>
 </html>
