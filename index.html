@@ -2,8 +2,14 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Bee Runner 3D</title>
+    
+    <!-- iOS Web App Einstellungen -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Bee Runner">
+
     <style>
         * {
             box-sizing: border-box;
@@ -11,13 +17,15 @@
             padding: 0;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
         body, html {
             width: 100%;
             height: 100%;
             overflow: hidden;
             background: #87ceeb;
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            touch-action: none;
         }
         #game-container {
             width: 100vw;
@@ -26,20 +34,20 @@
         }
         #hud {
             position: fixed;
-            top: 20px;
+            top: env(safe-area-inset-top, 20px);
             left: 20px;
             right: 20px;
             display: flex;
             justify-content: space-between;
-            font-size: 24px;
-            font-weight: bold;
+            font-size: 22px;
+            font-weight: 800;
             color: white;
-            text-shadow: 2px 2px 6px rgba(0,0,0,0.7);
+            text-shadow: 0 2px 8px rgba(0,0,0,0.6);
             pointer-events: none;
             z-index: 10;
         }
     </style>
-    <!-- Three.js Bibliothek einbinden -->
+    <!-- Three.js 3D Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
@@ -54,115 +62,148 @@
 
 <script>
 // ==========================================
-// 1. SZENE, KAMERA & RENDERER SETUP
+// 1. SETUP & KAMERA
 // ==========================================
 const container = document.getElementById('game-container');
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb); // Himmelblau
-scene.fog = new THREE.FogExp2(0x87ceeb, 0.015); // Sanfter Nebel in der Ferne
+scene.fog = new THREE.FogExp2(0x87ceeb, 0.012); // Ferne im Nebel
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-// Kamera leicht hinter und über der Biene platzieren (Subway Surfers Look)
-camera.position.set(0, 3.5, 6);
-camera.rotation.x = -0.2;
+camera.position.set(0, 3.8, 6.5);
+camera.rotation.x = -0.22;
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Nutzt die Retina-Schärfe vom iPhone Pro Max
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 container.appendChild(renderer.domElement);
 
 // ==========================================
-// 2. BELEUCHTUNG (Sonne & Schatten)
+// 2. BELEUCHTUNG & ATMOSPHÄRE
 // ==========================================
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
 scene.add(ambientLight);
 
-const sunLight = new THREE.DirectionalLight(0xfffaed, 1.2);
-sunLight.position.set(5, 12, 5);
+const sunLight = new THREE.DirectionalLight(0xfff5d6, 1.2);
+sunLight.position.set(5, 15, 5);
 sunLight.castShadow = true;
 sunLight.shadow.mapSize.width = 1024;
 sunLight.shadow.mapSize.height = 1024;
 scene.add(sunLight);
 
 // ==========================================
-// 3. FAHRBAHN (Waben-Pfad & Holzleisten)
+// 3. WABEN-STRASSE & HOLZSCHIENEN
 // ==========================================
-const lanePositions = [-2, 0, 2]; // X-Koordinaten der 3 Spuren
+const lanePositions = [-2.2, 0, 2.2];
 
-// Boden-Material (Gold-Gelb mit Glanz)
+// Boden
+const trackGeometry = new THREE.PlaneGeometry(8, 300);
 const trackMaterial = new THREE.MeshStandardMaterial({ 
-    color: 0xf5b014, 
+    color: 0xf4ab13, 
     roughness: 0.3,
     metalness: 0.1 
 });
-
-const trackGeometry = new THREE.PlaneGeometry(7.5, 200);
 const track = new THREE.Mesh(trackGeometry, trackMaterial);
 track.rotation.x = -Math.PI / 2;
-track.position.z = -90;
+track.position.z = -140;
 track.receiveShadow = true;
 scene.add(track);
 
-// Holzleisten als Spur-Trenner
-const woodMaterial = new THREE.MeshStandardMaterial({ color: 0x5c3a21 });
-[-1, 1].forEach(x => {
-    const railGeometry = new THREE.BoxGeometry(0.2, 0.2, 200);
+// Holzleisten als Fahrspur-Begrenzung
+const woodMaterial = new THREE.MeshStandardMaterial({ color: 0x5a3418, roughness: 0.6 });
+[-1.1, 1.1].forEach(x => {
+    const railGeometry = new THREE.BoxGeometry(0.25, 0.25, 300);
     const rail = new THREE.Mesh(railGeometry, woodMaterial);
-    rail.position.set(x, 0.1, -90);
+    rail.position.set(x, 0.125, -140);
     rail.castShadow = true;
     rail.receiveShadow = true;
     scene.add(rail);
 });
 
 // ==========================================
-// 4. SPIELER (BIENE)
+// 4. SPIELER (BIENE IN 3D)
 // ==========================================
 const playerGroup = new THREE.Group();
 
-// Bienen-Körper
-const bodyGeo = new THREE.SphereGeometry(0.6, 16, 16);
-bodyGeo.scale(1, 0.8, 1.2);
-const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffcc00, roughness: 0.4 });
+// Bienenkörper
+const bodyGeo = new THREE.SphereGeometry(0.65, 16, 16);
+bodyGeo.scale(1, 0.85, 1.2);
+const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffcc00, roughness: 0.3 });
 const body = new THREE.Mesh(bodyGeo, bodyMat);
 body.castShadow = true;
 playerGroup.add(body);
 
-// Flügel (Transparent)
-const wingGeo = new THREE.BufferGeometry();
-const wingMat = new THREE.MeshStandardMaterial({ 
-    color: 0xffffff, 
-    transparent: true, 
-    opacity: 0.7, 
-    roughness: 0.1 
-});
+// Schwarze Bienen-Streifen
+const stripeGeo = new THREE.CylinderGeometry(0.66, 0.66, 0.25, 16);
+const stripeMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 });
+const stripe1 = new THREE.Mesh(stripeGeo, stripeMat);
+stripe1.rotation.x = Math.PI / 2;
+stripe1.position.z = -0.1;
+playerGroup.add(stripe1);
 
-const leftWing = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.05, 0.4), wingMat);
-leftWing.position.set(-0.6, 0.4, 0);
-leftWing.rotation.z = 0.2;
+// Flügel
+const wingMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.75 });
+const wingGeo = new THREE.BoxGeometry(0.85, 0.04, 0.45);
+
+const leftWing = new THREE.Mesh(wingGeo, wingMat);
+leftWing.position.set(-0.65, 0.45, -0.1);
 playerGroup.add(leftWing);
 
 const rightWing = leftWing.clone();
-rightWing.position.x = 0.6;
-rightWing.rotation.z = -0.2;
+rightWing.position.x = 0.65;
 playerGroup.add(rightWing);
 
-playerGroup.position.set(0, 1, 0);
+playerGroup.position.set(0, 1.1, 0);
 scene.add(playerGroup);
 
-// Spieler-Status
+// Spieler-Logik
 const player = {
     lane: 1,
     targetX: 0,
-    y: 1,
+    y: 1.1,
     jumping: false,
     jumpVelocity: 0,
-    gravity: -0.015
+    gravity: -0.016
 };
 
 // ==========================================
-// 5. STEUERUNG (Tastatur & Touch/Swipe)
+// 5. OBJECT SPANNER (MÜNZEN & HINDERNISSE)
+// ==========================================
+const items = [];
+let coinsCount = 0;
+let honeyCount = 0;
+
+function spawnItem() {
+    const lane = Math.floor(Math.random() * 3);
+    const type = Math.random() > 0.4 ? 'coin' : 'obstacle';
+    
+    let mesh;
+    if (type === 'coin') {
+        const coinGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.1, 16);
+        const coinMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8, roughness: 0.2 });
+        mesh = new THREE.Mesh(coinGeo, coinMat);
+        mesh.rotation.x = Math.PI / 2;
+        mesh.position.set(lanePositions[lane], 1.1, -60);
+    } else {
+        const obsGeo = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+        const obsMat = new THREE.MeshStandardMaterial({ color: 0xd2691e, roughness: 0.5 });
+        mesh = new THREE.Mesh(obsGeo, obsMat);
+        mesh.position.set(lanePositions[lane], 0.6, -60);
+    }
+    
+    mesh.castShadow = true;
+    mesh.userData = { type: type, lane: lane };
+    scene.add(mesh);
+    items.push(mesh);
+}
+
+setInterval(spawnItem, 1200);
+
+// ==========================================
+// 6. STEUERUNG (SWIPE FÜR IPHONE)
 // ==========================================
 function moveLeft() {
     if (player.lane > 0) {
@@ -181,22 +222,17 @@ function moveRight() {
 function jump() {
     if (!player.jumping) {
         player.jumping = true;
-        player.jumpVelocity = 0.28;
+        player.jumpVelocity = 0.3;
     }
 }
-
-window.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowLeft' || e.key === 'a') moveLeft();
-    if (e.key === 'ArrowRight' || e.key === 'd') moveRight();
-    if (e.key === 'ArrowUp' || e.key === ' ' || e.key === 'w') jump();
-});
 
 let touchStartX = 0;
 let touchStartY = 0;
 window.addEventListener('touchstart', e => {
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
-});
+}, { passive: false });
+
 window.addEventListener('touchend', e => {
     const dx = e.changedTouches[0].clientX - touchStartX;
     const dy = e.changedTouches[0].clientY - touchStartY;
@@ -206,33 +242,70 @@ window.addEventListener('touchend', e => {
     } else {
         if (dy < -30) jump();
     }
+}, { passive: false });
+
+window.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft') moveLeft();
+    if (e.key === 'ArrowRight') moveRight();
+    if (e.key === 'ArrowUp' || e.key === ' ') jump();
 });
 
 // ==========================================
-// 6. GAME LOOP & UPDATE
+// 7. GAME LOOP & KOLLISIONEN
 // ==========================================
 function update() {
-    // Sanfte Spurwechsel-Animation (Lerp)
-    playerGroup.position.x += (player.targetX - playerGroup.position.x) * 0.15;
+    // Sanfte Bewegung
+    playerGroup.position.x += (player.targetX - playerGroup.position.x) * 0.18;
 
-    // Sprung-Physik
+    // Sprung
     if (player.jumping) {
         player.y += player.jumpVelocity;
         player.jumpVelocity += player.gravity;
-        if (player.y <= 1) {
-            player.y = 1;
+        if (player.y <= 1.1) {
+            player.y = 1.1;
             player.jumping = false;
         }
     }
     playerGroup.position.y = player.y;
 
-    // Flügel-Flatter-Animation
-    const wingFlap = Math.sin(Date.now() * 0.03) * 0.2;
-    leftWing.rotation.z = 0.2 + wingFlap;
-    rightWing.rotation.z = -0.2 - wingFlap;
+    // Flügel-Animation
+    const flap = Math.sin(Date.now() * 0.035) * 0.25;
+    leftWing.rotation.z = 0.2 + flap;
+    rightWing.rotation.z = -0.2 - flap;
 
-    // Kamera folgt der Biene leicht verzögert
-    camera.position.x = playerGroup.position.x * 0.3;
+    // Objekte bewegen & Kollision
+    const gameSpeed = 0.35;
+    for (let i = items.length - 1; i >= 0; i--) {
+        const item = items[i];
+        item.position.z += gameSpeed;
+
+        if (item.userData.type === 'coin') {
+            item.rotation.z += 0.05; // Münz-Drehung
+        }
+
+        // Kollision mit Biene
+        if (Math.abs(item.position.z - playerGroup.position.z) < 0.8 &&
+            Math.abs(item.position.x - playerGroup.position.x) < 0.8) {
+            
+            if (item.userData.type === 'coin') {
+                coinsCount += 1;
+                document.getElementById('coins').innerText = coinsCount;
+            } else {
+                honeyCount += 10;
+                document.getElementById('honey').innerText = honeyCount;
+            }
+
+            scene.remove(item);
+            items.splice(i, 1);
+            continue;
+        }
+
+        // Entfernen, wenn hinter der Kamera
+        if (item.position.z > 10) {
+            scene.remove(item);
+            items.splice(i, 1);
+        }
+    }
 }
 
 function animate() {
@@ -243,7 +316,7 @@ function animate() {
 
 animate();
 
-// Fenster-Skalierung
+// Resizing für iPhone Orientierung
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
