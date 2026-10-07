@@ -1,516 +1,763 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Bee Runner 3D</title>
-    
-    <!-- iOS Web App Einstellungen -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Bee Runner">
-
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
-        }
-        body, html {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: #87ceeb;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            touch-action: none;
-        }
-        #game-container {
-            width: 100vw;
-            height: 100vh;
-            display: block;
-        }
-        #hud {
-            position: fixed;
-            top: env(safe-area-inset-top, 20px);
-            left: 20px;
-            right: 20px;
-            display: flex;
-            justify-content: space-between;
-            font-size: 22px;
-            font-weight: 800;
-            color: white;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.6);
-            pointer-events: none;
-            z-index: 10;
-        }
-        .score-popup {
-            position: fixed;
-            font-size: 32px;
-            font-weight: 900;
-            color: #ffea00;
-            text-shadow: 0 0 10px #ff6a00, 2px 2px 0px #000;
-            pointer-events: none;
-            z-index: 20;
-            animation: floatUp 0.8s ease-out forwards;
-        }
-        @keyframes floatUp {
-            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
-            50% { transform: translate(-50%, -100%) scale(1.3); opacity: 1; }
-            100% { transform: translate(-50%, -150%) scale(1); opacity: 0; }
-        }
-    </style>
-    <!-- Three.js 3D Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>WormRing 3D</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js Engine -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Firebase SDKs via CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #game-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+    }
+  </style>
 </head>
-<body>
+<body class="bg-slate-900 text-white">
 
-<div id="hud">
-    <div>🍯 <span id="honey">0</span></div>
-    <div>🪙 <span id="coins">0</span></div>
-    <div>❤️ <span id="lives">3</span></div>
-</div>
+  <!-- 3D Spiel Canvas -->
+  <canvas id="game-canvas"></canvas>
 
-<div id="game-container"></div>
+  <!-- Einstellungen-Button (Oben Rechts) -->
+  <button id="settings-btn" class="absolute top-4 right-4 z-40 bg-white/20 hover:bg-white/30 backdrop-blur-md p-3 rounded-2xl shadow-xl border border-white/30 text-2xl transition active:scale-90">
+    ⚙️
+  </button>
 
-<script>
-// ==========================================
-// 1. SETUP & KAMERA
-// ==========================================
-const container = document.getElementById('game-container');
+  <!-- Dynamischer Touch-Joystick Overlay -->
+  <div id="joystick-container" class="absolute pointer-events-none hidden" style="transform: translate(-50%, -50%); z-index: 10;">
+    <div id="joystick-base" class="w-24 h-24 rounded-full bg-white/20 border-2 border-white/50 backdrop-blur-md flex items-center justify-center relative shadow-2xl">
+      <div id="joystick-stick" class="w-10 h-10 rounded-full bg-cyan-400 border-2 border-white shadow-lg transition-transform duration-75"></div>
+    </div>
+  </div>
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x76c7f5); // Helles Himmelblau
-scene.fog = new THREE.FogExp2(0x76c7f5, 0.011);
+  <!-- HUD Overlay (Punkte & Länge) -->
+  <div id="hud" class="absolute top-4 left-4 right-16 flex justify-between items-center pointer-events-none hidden z-10">
+    <div class="bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-cyan-500/30 text-white font-bold text-base md:text-lg">
+      🌟 Punkte: <span id="score-val" class="text-cyan-400">0</span>
+    </div>
+    <div class="bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-amber-500/30 text-white font-bold text-xs md:text-sm">
+      🐍 Länge: <span id="length-val" class="text-amber-400">5</span>
+    </div>
+  </div>
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 3.8, 6.5);
-camera.rotation.x = -0.22;
+  <!-- Startmenü & Leaderboard -->
+  <div id="start-menu" class="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-20 overflow-y-auto">
+    <div class="bg-slate-900/95 my-auto p-5 md:p-6 rounded-3xl shadow-2xl border border-cyan-500/30 max-w-md w-full text-center relative overflow-hidden">
+      
+      <!-- Weltraum-Wurm Banner Foto -->
+      <div class="w-full h-36 md:h-44 rounded-2xl overflow-hidden mb-4 relative shadow-inner border border-white/10">
+        <img src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80" alt="WormRing Cosmic" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent flex items-end justify-center pb-2">
+          <h1 class="text-3xl font-black text-cyan-400 drop-shadow-[0_2px_10px_rgba(34,211,238,0.8)] tracking-wide">🐛 WormRing 3D</h1>
+        </div>
+      </div>
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-container.appendChild(renderer.domElement);
+      <!-- Spielername Input -->
+      <div class="mb-4 text-left">
+        <label for="player-name" class="block text-xs font-bold text-cyan-300 uppercase mb-1">Dein Spielername</label>
+        <input type="text" id="player-name" placeholder="SpaceWorm" maxlength="15" class="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-400 text-white font-bold text-base transition">
+      </div>
 
-// ==========================================
-// 2. BELEUCHTUNG & ATMOSPHÄRE
-// ==========================================
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
-scene.add(ambientLight);
+      <!-- Skin / Farbauswahl -->
+      <div class="mb-5 text-left">
+        <label class="block text-xs font-bold text-amber-300 uppercase mb-2">Wähle deinen Skin (Farbe)</label>
+        <div id="skin-picker" class="flex justify-between items-center bg-slate-800/80 p-2.5 rounded-2xl border border-slate-700">
+          <button data-color="0x1982c4" class="skin-opt w-9 h-9 rounded-full bg-cyan-500 border-2 border-white ring-2 ring-cyan-400 scale-110 transition"></button>
+          <button data-color="0xff595e" class="skin-opt w-9 h-9 rounded-full bg-rose-500 border-2 border-transparent hover:scale-105 transition"></button>
+          <button data-color="0x8ac926" class="skin-opt w-9 h-9 rounded-full bg-lime-500 border-2 border-transparent hover:scale-105 transition"></button>
+          <button data-color="0x6a4c93" class="skin-opt w-9 h-9 rounded-full bg-purple-500 border-2 border-transparent hover:scale-105 transition"></button>
+          <button data-color="0xffca3a" class="skin-opt w-9 h-9 rounded-full bg-amber-400 border-2 border-transparent hover:scale-105 transition"></button>
+          <button data-color="0xff924c" class="skin-opt w-9 h-9 rounded-full bg-orange-500 border-2 border-transparent hover:scale-105 transition"></button>
+        </div>
+      </div>
 
-const sunLight = new THREE.DirectionalLight(0xfff5d6, 1.4);
-sunLight.position.set(8, 18, 8);
-sunLight.castShadow = true;
-sunLight.shadow.mapSize.width = 1024;
-sunLight.shadow.mapSize.height = 1024;
-scene.add(sunLight);
+      <!-- Start Button -->
+      <button id="start-btn" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 active:scale-95 text-white font-black text-lg rounded-2xl shadow-lg shadow-cyan-500/25 transition duration-150 mb-5">
+        SPIEL STARTEN ▶
+      </button>
 
-// ==========================================
-// 3. FAHRBAHN & GRÜNE LANDSCHAFT
-// ==========================================
-const lanePositions = [-2.2, 0, 2.2];
+      <!-- Leaderboard Liste -->
+      <div class="border-t border-slate-800 pt-3 text-left">
+        <div class="flex justify-between items-center mb-2">
+          <h2 class="text-xs font-bold text-slate-400 uppercase flex items-center gap-1">🏆 Top Highscores</h2>
+          <span id="lb-status" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold">Online</span>
+        </div>
+        <div class="bg-slate-800/50 rounded-2xl p-2.5 border border-slate-800 max-h-36 overflow-y-auto custom-scrollbar">
+          <ol id="leaderboard-list" class="text-xs font-semibold text-slate-300 divide-y divide-slate-800/50">
+            <li class="py-2 text-center text-slate-500 italic">Lade Bestenliste...</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
 
-// Hauptpfad (Gold-Waben-Look)
-const trackGeometry = new THREE.PlaneGeometry(8, 300);
-const trackMaterial = new THREE.MeshStandardMaterial({ color: 0xf5ab18, roughness: 0.35, metalness: 0.1 });
-const track = new THREE.Mesh(trackGeometry, trackMaterial);
-track.rotation.x = -Math.PI / 2;
-track.position.z = -140;
-track.receiveShadow = true;
-scene.add(track);
+  <!-- Einstellungen Modal -->
+  <div id="settings-modal" class="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 p-6 rounded-3xl border border-slate-700 max-w-xs w-full text-center shadow-2xl">
+      <h2 class="text-2xl font-black text-cyan-400 mb-4">Einstellungen</h2>
+      
+      <div class="space-y-4 mb-6 text-left">
+        <div class="flex justify-between items-center bg-slate-800 p-3 rounded-xl border border-slate-700">
+          <span class="text-sm font-bold text-slate-300">🔊 Soundeffekte</span>
+          <input type="checkbox" id="sound-toggle" checked class="w-5 h-5 accent-cyan-500">
+        </div>
+        <button id="reset-scores-btn" class="w-full py-2.5 bg-rose-950/60 hover:bg-rose-900 border border-rose-800 text-rose-300 text-xs font-bold rounded-xl transition">
+          Lokale Highscores löschen
+        </button>
+      </div>
 
-// Grüner Rasen links und rechts
-const grassGeo = new THREE.PlaneGeometry(100, 300);
-const grassMat = new THREE.MeshStandardMaterial({ color: 0x5cb836, roughness: 0.7 });
+      <button id="close-settings-btn" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm rounded-xl border border-slate-600 transition">
+        Schließen
+      </button>
+    </div>
+  </div>
 
-const leftGrass = new THREE.Mesh(grassGeo, grassMat);
-leftGrass.rotation.x = -Math.PI / 2;
-leftGrass.position.set(-54, -0.05, -140);
-leftGrass.receiveShadow = true;
-scene.add(leftGrass);
+  <!-- Game Over Screen -->
+  <div id="gameover-menu" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-30 hidden">
+    <div class="bg-slate-900 p-6 md:p-8 rounded-3xl shadow-2xl border border-rose-500/40 max-w-sm w-full text-center">
+      <div class="text-5xl mb-2">💥</div>
+      <h2 class="text-3xl font-black text-rose-500 mb-2">Game Over!</h2>
+      <p class="text-slate-400 text-sm mb-4">Du bist zusammengestoßen.</p>
+      
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 mb-6">
+        <div class="text-xs text-amber-400 font-bold uppercase mb-1">Erreichte Punkte</div>
+        <div id="final-score" class="text-4xl font-extrabold text-cyan-400">0</div>
+      </div>
 
-const rightGrass = new THREE.Mesh(grassGeo, grassMat);
-rightGrass.rotation.x = -Math.PI / 2;
-rightGrass.position.set(54, -0.05, -140);
-rightGrass.receiveShadow = true;
-scene.add(rightGrass);
+      <button id="restart-btn" class="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 active:scale-95 text-white font-black text-xl rounded-2xl shadow-lg shadow-amber-500/20 transition">
+        NOCHMAL SPIELEN 🔄
+      </button>
+    </div>
+  </div>
 
-// Holzleisten-Trenner zwischen den Spuren
-const woodMaterial = new THREE.MeshStandardMaterial({ color: 0x5a3418, roughness: 0.6 });
-[-1.1, 1.1].forEach(x => {
-    const railGeometry = new THREE.BoxGeometry(0.25, 0.25, 300);
-    const rail = new THREE.Mesh(railGeometry, woodMaterial);
-    rail.position.set(x, 0.125, -140);
-    rail.castShadow = true;
-    rail.receiveShadow = true;
-    scene.add(rail);
-});
+  <script>
+    // ==========================================
+    // FIREBASE KONFIGURATION (wormring-16620)
+    // ==========================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyDK77MSnstrk4Q3XW0-Pd7LEMCQuRd1NjM",
+      authDomain: "wormring-16620.firebaseapp.com",
+      projectId: "wormring-16620",
+      storageBucket: "wormring-16620.firebasestorage.app",
+      messagingSenderId: "1066548218415",
+      appId: "1:1066548218415:web:25358a6ab6cda5ce11d4da",
+      measurementId: "G-QQ0CSTRFR9"
+    };
 
-// Holzzäune an den Außenrändern des Pfades
-const fenceGroup = new THREE.Group();
-const fencePostGeo = new THREE.BoxGeometry(0.2, 1.0, 0.2);
-const fenceRailGeo = new THREE.BoxGeometry(0.1, 0.15, 300);
+    let db = null;
+    let isFirebaseActive = false;
 
-[-4.1, 4.1].forEach(sideX => {
-    const rail1 = new THREE.Mesh(fenceRailGeo, woodMaterial);
-    rail1.position.set(sideX, 0.7, -140);
-    rail1.castShadow = true;
-    scene.add(rail1);
-
-    const rail2 = new THREE.Mesh(fenceRailGeo, woodMaterial);
-    rail2.position.set(sideX, 0.35, -140);
-    rail2.castShadow = true;
-    scene.add(rail2);
-
-    for (let z = 0; z > -280; z -= 6) {
-        const post = new THREE.Mesh(fencePostGeo, woodMaterial);
-        post.position.set(sideX, 0.5, z);
-        post.castShadow = true;
-        scene.add(post);
-    }
-});
-
-// ==========================================
-// 4. DEKORATION (BÄUME & BIENENSTÖCKE)
-// ==========================================
-const environmentObjects = [];
-
-function createTree(x, z) {
-    const group = new THREE.Group();
-    // Stamm
-    const trunk = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.3, 0.4, 2, 8),
-        new THREE.MeshStandardMaterial({ color: 0x6e4323 })
-    );
-    trunk.position.y = 1;
-    trunk.castShadow = true;
-    group.add(trunk);
-
-    // Kronen (Kugeln)
-    const leavesMat = new THREE.MeshStandardMaterial({ color: 0x2e8b22, roughness: 0.5 });
-    const leaves = new THREE.Mesh(new THREE.SphereGeometry(1.5, 8, 8), leavesMat);
-    leaves.position.y = 2.5;
-    leaves.castShadow = true;
-    group.add(leaves);
-
-    group.position.set(x, 0, z);
-    scene.add(group);
-    environmentObjects.push(group);
-}
-
-function createBeehiveDecoration(x, z) {
-    const group = new THREE.Group();
-    // Bienenstock (Kuppel-Form)
-    const hiveMat = new THREE.MeshStandardMaterial({ color: 0xe6a100, roughness: 0.4 });
-    const hive = new THREE.Mesh(new THREE.SphereGeometry(1.2, 12, 12), hiveMat);
-    hive.scale.set(1, 1.3, 1);
-    hive.position.y = 1.5;
-    hive.castShadow = true;
-    group.add(hive);
-
-    group.position.set(x, 0, z);
-    scene.add(group);
-    environmentObjects.push(group);
-}
-
-// Bäume und Bienenstöcke am Wegesrand verteilen
-for (let z = -10; z > -250; z -= 25) {
-    createTree(-8 - Math.random() * 8, z);
-    createTree(8 + Math.random() * 8, z - 10);
-    if (Math.random() > 0.5) createBeehiveDecoration(-10, z - 15);
-    else createBeehiveDecoration(10, z - 5);
-}
-
-// ==========================================
-// 5. SPIELER (BIENE)
-// ==========================================
-const playerGroup = new THREE.Group();
-
-const bodyGeo = new THREE.SphereGeometry(0.65, 16, 16);
-bodyGeo.scale(1, 0.85, 1.2);
-const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffcc00, roughness: 0.3 });
-const body = new THREE.Mesh(bodyGeo, bodyMat);
-body.castShadow = true;
-playerGroup.add(body);
-
-const stripeGeo = new THREE.CylinderGeometry(0.66, 0.66, 0.25, 16);
-const stripeMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 });
-const stripe1 = new THREE.Mesh(stripeGeo, stripeMat);
-stripe1.rotation.x = Math.PI / 2;
-stripe1.position.z = -0.1;
-playerGroup.add(stripe1);
-
-const wingMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
-const wingGeo = new THREE.BoxGeometry(0.85, 0.04, 0.45);
-
-const leftWing = new THREE.Mesh(wingGeo, wingMat);
-leftWing.position.set(-0.65, 0.45, -0.1);
-playerGroup.add(leftWing);
-
-const rightWing = leftWing.clone();
-rightWing.position.x = 0.65;
-playerGroup.add(rightWing);
-
-playerGroup.position.set(0, 1.1, 0);
-scene.add(playerGroup);
-
-const player = {
-    lane: 1,
-    targetX: 0,
-    y: 1.1,
-    jumping: false,
-    jumpVelocity: 0,
-    gravity: -0.016
-};
-
-// ==========================================
-// 6. ITEM GENERATOR (MÜNZEN, POWERUPS, HINDERNISSE)
-// ==========================================
-const items = [];
-let coinsCount = 0;
-let honeyCount = 0;
-let livesCount = 3;
-
-function createGlowAura(color) {
-    const auraGeo = new THREE.SphereGeometry(0.8, 16, 16);
-    const auraMat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.35, side: THREE.BackSide });
-    return new THREE.Mesh(auraGeo, auraMat);
-}
-
-function spawnItem() {
-    const lane = Math.floor(Math.random() * 3);
-    const rand = Math.random();
-    
-    let group = new THREE.Group();
-    let type = '';
-
-    if (rand < 0.40) {
-        // MÜNZE (🪙)
-        type = 'coin';
-        const coinGeo = new THREE.CylinderGeometry(0.45, 0.45, 0.12, 16);
-        const coinMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.9, roughness: 0.1 });
-        const mesh = new THREE.Mesh(coinGeo, coinMat);
-        mesh.rotation.x = Math.PI / 2;
-        group.add(mesh);
-        group.position.set(lanePositions[lane], 1.2, -70);
-
-    } else if (rand < 0.60) {
-        // HONIGTOPF (🍯)
-        type = 'pot';
-        const potGeo = new THREE.CylinderGeometry(0.45, 0.55, 0.8, 16);
-        const potMat = new THREE.MeshStandardMaterial({ color: 0xd2691e, roughness: 0.4 });
-        const pot = new THREE.Mesh(potGeo, potMat);
-        
-        const topGeo = new THREE.SphereGeometry(0.48, 12, 12);
-        const topMat = new THREE.MeshStandardMaterial({ color: 0xffaa00, roughness: 0.2 });
-        const top = new THREE.Mesh(topGeo, topMat);
-        top.position.y = 0.4;
-        pot.add(top);
-
-        group.add(pot);
-        group.position.set(lanePositions[lane], 1.0, -70);
-
-    } else if (rand < 0.75) {
-        // WABEN-HINDERNIS
-        type = 'obstacle';
-        const obsGeo = new THREE.BoxGeometry(1.6, 1.8, 1.2);
-        const obsMat = new THREE.MeshStandardMaterial({ color: 0xe09612, roughness: 0.5 });
-        const mesh = new THREE.Mesh(obsGeo, obsMat);
-        group.add(mesh);
-        group.position.set(lanePositions[lane], 0.9, -70);
-
-    } else if (rand < 0.88) {
-        // ROTES HERZ (❤️)
-        type = 'heart';
-        const heartShape = new THREE.Shape();
-        heartShape.moveTo(0, 0);
-        heartShape.bezierCurveTo(0, 0.3, -0.5, 0.6, -0.5, 0);
-        heartShape.bezierCurveTo(-0.5, -0.4, 0, -0.6, 0, -0.9);
-        heartShape.bezierCurveTo(0, -0.6, 0.5, -0.4, 0.5, 0);
-        heartShape.bezierCurveTo(0.5, 0.6, 0, 0.3, 0, 0);
-
-        const heartGeo = new THREE.ExtrudeGeometry(heartShape, { depth: 0.2, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: 0.08, bevelThickness: 0.08 });
-        const heartMat = new THREE.MeshStandardMaterial({ color: 0xff1133, roughness: 0.2 });
-        const heartMesh = new THREE.Mesh(heartGeo, heartMat);
-        heartMesh.scale.set(0.6, 0.6, 0.6);
-        heartMesh.rotation.z = Math.PI;
-        group.add(heartMesh);
-
-        group.add(createGlowAura(0xffea00));
-        group.position.set(lanePositions[lane], 1.4, -70);
-
-    } else {
-        // BLAUER SCHILD (🛡)
-        type = 'shield';
-        const shieldGeo = new THREE.CylinderGeometry(0.5, 0.1, 0.9, 3);
-        const shieldMat = new THREE.MeshStandardMaterial({ color: 0x0077ff, metalness: 0.5, roughness: 0.2 });
-        const shieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
-        shieldMesh.rotation.y = Math.PI;
-        group.add(shieldMesh);
-
-        group.add(createGlowAura(0x00d9ff));
-        group.position.set(lanePositions[lane], 1.4, -70);
+    try {
+      if (typeof firebase !== 'undefined') {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        isFirebaseActive = true;
+      }
+    } catch(e) {
+      console.warn("Firebase Init Hinweis:", e);
     }
 
-    group.traverse(child => { if(child.isMesh) child.castShadow = true; });
-    group.userData = { type: type, lane: lane };
-    scene.add(group);
-    items.push(group);
-}
+    // ==========================================
+    // EINSTELLUNGEN & SKINS LOGIK
+    // ==========================================
+    let soundEnabled = true;
+    let selectedSkin = 0x1982c4; // Standard Neon Blau
 
-setInterval(spawnItem, 1100);
-
-function showScorePopup(text, x, y) {
-    const popup = document.createElement('div');
-    popup.className = 'score-popup';
-    popup.innerText = text;
-    popup.style.left = x + 'px';
-    popup.style.top = y + 'px';
-    document.body.appendChild(popup);
-    setTimeout(() => popup.remove(), 800);
-}
-
-// ==========================================
-// 7. STEUERUNG
-// ==========================================
-function moveLeft() {
-    if (player.lane > 0) {
-        player.lane--;
-        player.targetX = lanePositions[player.lane];
-    }
-}
-
-function moveRight() {
-    if (player.lane < 2) {
-        player.lane++;
-        player.targetX = lanePositions[player.lane];
-    }
-}
-
-function jump() {
-    if (!player.jumping) {
-        player.jumping = true;
-        player.jumpVelocity = 0.3;
-    }
-}
-
-let touchStartX = 0;
-let touchStartY = 0;
-window.addEventListener('touchstart', e => {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-}, { passive: false });
-
-window.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    const dy = e.changedTouches[0].clientY - touchStartY;
-    if (Math.abs(dx) > Math.abs(dy)) {
-        if (dx > 30) moveRight();
-        else if (dx < -30) moveLeft();
-    } else {
-        if (dy < -30) jump();
-    }
-}, { passive: false });
-
-window.addEventListener('keydown', e => {
-    if (e.key === 'ArrowLeft') moveLeft();
-    if (e.key === 'ArrowRight') moveRight();
-    if (e.key === 'ArrowUp' || e.key === ' ') jump();
-});
-
-// ==========================================
-// 8. GAME LOOP & UMGEBUNGS-BEWEGUNG
-// ==========================================
-function update() {
-    playerGroup.position.x += (player.targetX - playerGroup.position.x) * 0.18;
-
-    if (player.jumping) {
-        player.y += player.jumpVelocity;
-        player.jumpVelocity += player.gravity;
-        if (player.y <= 1.1) {
-            player.y = 1.1;
-            player.jumping = false;
-        }
-    }
-    playerGroup.position.y = player.y;
-
-    const flap = Math.sin(Date.now() * 0.035) * 0.25;
-    leftWing.rotation.z = 0.2 + flap;
-    rightWing.rotation.z = -0.2 - flap;
-
-    const gameSpeed = 0.38;
-
-    // Umgebung Objekte endlos bewegen
-    environmentObjects.forEach(obj => {
-        obj.position.z += gameSpeed;
-        if (obj.position.z > 15) {
-            obj.position.z -= 240;
-        }
+    document.querySelectorAll('.skin-opt').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.skin-opt').forEach(b => {
+          b.classList.remove('ring-2', 'ring-cyan-400', 'scale-110');
+          b.classList.add('border-transparent');
+        });
+        const target = e.currentTarget;
+        target.classList.add('ring-2', 'ring-cyan-400', 'scale-110');
+        target.classList.remove('border-transparent');
+        selectedSkin = parseInt(target.getAttribute('data-color'));
+      });
     });
 
-    // Items bewegen
-    for (let i = items.length - 1; i >= 0; i--) {
-        const item = items[i];
-        item.position.z += gameSpeed;
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsModal = document.getElementById('settings-modal');
+    const closeSettingsBtn = document.getElementById('close-settings-btn');
+    const soundToggle = document.getElementById('sound-toggle');
+    const resetScoresBtn = document.getElementById('reset-scores-btn');
 
-        if (item.userData.type === 'coin' || item.userData.type === 'heart' || item.userData.type === 'shield') {
-            item.rotation.y += 0.04;
+    settingsBtn.addEventListener('click', () => settingsModal.classList.remove('hidden'));
+    closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
+    soundToggle.addEventListener('change', (e) => soundEnabled = e.target.checked);
+    resetScoresBtn.addEventListener('click', () => {
+      if (confirm('Möchtest du die lokalen Highscores löschen?')) {
+        localStorage.removeItem('worm_scores');
+        loadLeaderboard();
+        alert('Lokale Highscores gelöscht!');
+      }
+    });
+
+    // ==========================================
+    // AUDIO SYNTHESIZER (Web Audio API)
+    // ==========================================
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new AudioCtx();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playPopSound() {
+      if (!soundEnabled || !audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.08);
+      } catch(e){}
+    }
+
+    function playHitSound() {
+      if (!soundEnabled || !audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(160, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(30, audioCtx.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.25);
+      } catch(e){}
+    }
+
+    // ==========================================
+    // LEADERBOARD LOGIK
+    // ==========================================
+    const lbStatusEl = document.getElementById('lb-status');
+    const lbListEl = document.getElementById('leaderboard-list');
+
+    function updateLBStatus(online) {
+      if (online) {
+        lbStatusEl.textContent = "Online Cloud";
+        lbStatusEl.className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold";
+      } else {
+        lbStatusEl.textContent = "Lokal";
+        lbStatusEl.className = "text-[10px] px-2 py-0.5 rounded-full bg-amber-950 text-amber-400 border border-amber-800 font-bold";
+      }
+    }
+
+    function loadLeaderboard() {
+      if (isFirebaseActive && db) {
+        db.collection("leaderboard")
+          .orderBy("score", "desc")
+          .limit(10)
+          .onSnapshot((snapshot) => {
+            updateLBStatus(true);
+            const scores = [];
+            snapshot.forEach(doc => scores.push(doc.data()));
+            renderLeaderboardUI(scores);
+          }, (err) => {
+            console.warn("Firestore Hinweis, Fallback auf lokal:", err);
+            loadLocalLeaderboard();
+          });
+      } else {
+        loadLocalLeaderboard();
+      }
+    }
+
+    function loadLocalLeaderboard() {
+      updateLBStatus(false);
+      const local = JSON.parse(localStorage.getItem('worm_scores') || '[]');
+      renderLeaderboardUI(local);
+    }
+
+    function renderLeaderboardUI(scores) {
+      lbListEl.innerHTML = '';
+      if (!scores || scores.length === 0) {
+        lbListEl.innerHTML = '<li class="py-2 text-center text-slate-500 italic">Noch keine Highscores vorhanden</li>';
+        return;
+      }
+      scores.slice(0, 10).forEach((entry, idx) => {
+        const li = document.createElement('li');
+        li.className = "py-1.5 flex justify-between items-center font-semibold";
+        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+        li.innerHTML = `
+          <span class="flex items-center gap-2">
+            <span class="w-5 text-center font-bold text-slate-500 text-[10px]">${medal}</span>
+            <span class="text-slate-200">${escapeHtml(entry.name || 'Anonym')}</span>
+          </span>
+          <span class="text-cyan-400 font-black">${Math.floor(entry.score || 0)}</span>
+        `;
+        lbListEl.appendChild(li);
+      });
+    }
+
+    async function saveScore(name, score) {
+      const cleanScore = Math.floor(score);
+      const cleanName = name.trim() || 'WurmPlayer';
+
+      const local = JSON.parse(localStorage.getItem('worm_scores') || '[]');
+      local.push({ name: cleanName, score: cleanScore, date: new Date().toISOString() });
+      local.sort((a,b) => b.score - a.score);
+      localStorage.setItem('worm_scores', JSON.stringify(local.slice(0, 20)));
+
+      if (isFirebaseActive && db) {
+        try {
+          await db.collection("leaderboard").add({
+            name: cleanName,
+            score: cleanScore,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        } catch(e) {
+          console.error("Fehler beim Speichern:", e);
+        }
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+      });
+    }
+
+    const nameInput = document.getElementById('player-name');
+    nameInput.value = localStorage.getItem('worm_player_name') || 'Wurm' + Math.floor(Math.random()*1000);
+
+    // ==========================================
+    // THREE.JS & SPIEL ENGINES
+    // ==========================================
+    const canvas = document.getElementById('game-canvas');
+    let renderer, scene, camera;
+    let isPlaying = false;
+    let animationFrameId = null;
+
+    const SPEED = 0.075; // Angenehme, entspannte Geschwindigkeit
+    const SEGMENT_DISTANCE = 0.42;
+    const ARENA_SIZE = 40;
+
+    let player;
+    let bots = [];
+    let foods = [];
+
+    const COLORS = [0x1982c4, 0xff595e, 0x8ac926, 0x6a4c93, 0xffca3a, 0xff924c];
+
+    function initThree() {
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0f172a); // Stylischer dunkler Cosmic-Hintergrund
+      scene.fog = new THREE.FogExp2(0x0f172a, 0.018);
+
+      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 18, 14);
+      camera.lookAt(0, 0, 0);
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0x38bdf8, 1.0);
+      dirLight.position.set(20, 40, 20);
+      dirLight.castShadow = true;
+      scene.add(dirLight);
+
+      // Arena Boden
+      const groundGeo = new THREE.PlaneGeometry(ARENA_SIZE * 2, ARENA_SIZE * 2);
+      const groundMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7, metalness: 0.1 });
+      const ground = new THREE.Mesh(groundGeo, groundMat);
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      const grid = new THREE.GridHelper(ARENA_SIZE * 2, 40, 0x38bdf8, 0x334155);
+      grid.position.y = 0.01;
+      scene.add(grid);
+
+      window.addEventListener('resize', onWindowResize);
+    }
+
+    function onWindowResize() {
+      if (!camera || !renderer) return;
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // WURM KLASSE (Neues kinematisches Folge-System)
+    class Worm {
+      constructor(isPlayer = false, color = 0x1982c4, startX = 0, startZ = 0) {
+        this.isPlayer = isPlayer;
+        this.color = color;
+        this.score = 0;
+        this.dir = Math.random() * Math.PI * 2;
+        this.targetDir = this.dir;
+        this.isDead = false;
+
+        this.segments = [];
+        this.meshGroup = new THREE.Group();
+        scene.add(this.meshGroup);
+
+        const headMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.2, metalness: 0.2 });
+
+        const headGeo = new THREE.SphereGeometry(0.5, 16, 16);
+        const headMesh = new THREE.Mesh(headGeo, headMat);
+        headMesh.castShadow = true;
+        headMesh.position.set(startX, 0.5, startZ);
+        this.meshGroup.add(headMesh);
+        this.segments.push(headMesh);
+
+        // Augen
+        const eyeGeo = new THREE.SphereGeometry(0.12, 8, 8);
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+
+        const eyeLeft = new THREE.Mesh(eyeGeo, eyeMat);
+        eyeLeft.position.set(-0.2, 0.22, 0.3);
+        headMesh.add(eyeLeft);
+        const pupilLeft = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), pupilMat);
+        pupilLeft.position.set(0, 0, 0.08);
+        eyeLeft.add(pupilLeft);
+
+        const eyeRight = new THREE.Mesh(eyeGeo, eyeMat);
+        eyeRight.position.set(0.2, 0.22, 0.3);
+        headMesh.add(eyeRight);
+        const pupilRight = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), pupilMat);
+        pupilRight.position.set(0, 0, 0.08);
+        eyeRight.add(pupilRight);
+
+        // Start-Segmente erzeugen
+        for (let i = 0; i < 6; i++) {
+          this.addSegment(startX - (i + 1) * SEGMENT_DISTANCE * Math.sin(this.dir), startZ - (i + 1) * SEGMENT_DISTANCE * Math.cos(this.dir));
+        }
+      }
+
+      addSegment(x, z) {
+        const scale = Math.max(0.28, 0.46 - this.segments.length * 0.003);
+        const bodyGeo = new THREE.SphereGeometry(scale, 12, 12);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: this.color, roughness: 0.3 });
+        const mesh = new THREE.Mesh(bodyGeo, bodyMat);
+        mesh.castShadow = true;
+        mesh.position.set(x, scale, z);
+        this.meshGroup.add(mesh);
+        this.segments.push(mesh);
+      }
+
+      update() {
+        if (this.isDead) return;
+
+        // Sanfte Kopf-Rotation
+        let diff = this.targetDir - this.dir;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        this.dir += diff * 0.12;
+
+        const head = this.segments[0];
+        head.position.x += Math.sin(this.dir) * SPEED;
+        head.position.z += Math.cos(this.dir) * SPEED;
+        head.rotation.y = this.dir;
+
+        // Spielfeld-Grenzen
+        if (Math.abs(head.position.x) > ARENA_SIZE || Math.abs(head.position.z) > ARENA_SIZE) {
+          this.die();
+          return;
         }
 
-        if (Math.abs(item.position.z - playerGroup.position.z) < 0.8 &&
-            Math.abs(item.position.x - playerGroup.position.x) < 0.8 &&
-            Math.abs(item.position.y - playerGroup.position.y) < 1.0) {
-            
-            const type = item.userData.type;
+        // PERFEKTIONIERTE KINEMATIK: Jedes Segment folgt exakt dem vorherigen auf direkter Distanzlinie
+        for (let i = 1; i < this.segments.length; i++) {
+          const prev = this.segments[i - 1];
+          const curr = this.segments[i];
 
-            if (type === 'coin') {
-                coinsCount += 1;
-                document.getElementById('coins').innerText = coinsCount;
-            } else if (type === 'pot') {
-                honeyCount += 20;
-                document.getElementById('honey').innerText = honeyCount;
-                showScorePopup('+20P', window.innerWidth / 2, window.innerHeight / 2);
-            } else if (type === 'heart') {
-                livesCount += 1;
-                document.getElementById('lives').innerText = livesCount;
-            } else if (type === 'shield') {
-                showScorePopup('SCHILD!', window.innerWidth / 2, window.innerHeight / 3);
-            } else if (type === 'obstacle') {
-                if (livesCount > 0) {
-                    livesCount -= 1;
-                    document.getElementById('lives').innerText = livesCount;
-                }
+          const dx = prev.position.x - curr.position.x;
+          const dz = prev.position.z - curr.position.z;
+          const dist = Math.hypot(dx, dz);
+
+          if (dist > 0.0001) {
+            const angle = Math.atan2(dx, dz);
+            curr.position.x = prev.position.x - Math.sin(angle) * SEGMENT_DISTANCE;
+            curr.position.z = prev.position.z - Math.cos(angle) * SEGMENT_DISTANCE;
+            curr.rotation.y = angle;
+          }
+        }
+      }
+
+      die() {
+        if (this.isDead) return;
+        this.isDead = true;
+
+        this.segments.forEach(seg => {
+          spawnFood(seg.position.x, seg.position.z);
+        });
+
+        scene.remove(this.meshGroup);
+
+        if (this.isPlayer) {
+          playHitSound();
+          onGameOver(this.score);
+        }
+      }
+    }
+
+    // SPATIAL FUTTER SPANNING
+    function spawnFood(x = null, z = null) {
+      const foodGeo = new THREE.DodecahedronGeometry(0.25);
+      const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+      const foodMat = new THREE.MeshStandardMaterial({
+        color: color,
+        roughness: 0.1,
+        emissive: color,
+        emissiveIntensity: 0.6
+      });
+      const mesh = new THREE.Mesh(foodGeo, foodMat);
+      mesh.castShadow = true;
+
+      const px = x !== null ? x : (Math.random() - 0.5) * (ARENA_SIZE * 1.8);
+      const pz = z !== null ? z : (Math.random() - 0.5) * (ARENA_SIZE * 1.8);
+
+      mesh.position.set(px, 0.3, pz);
+      scene.add(mesh);
+      foods.push(mesh);
+    }
+
+    // JOYSTICK STEUERUNG
+    const joystickContainer = document.getElementById('joystick-container');
+    const joystickStick = document.getElementById('joystick-stick');
+
+    let touchActive = false;
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    window.addEventListener('pointerdown', (e) => {
+      if (!isPlaying) return;
+      if (e.clientY < 70 && e.clientX > window.innerWidth - 70) return;
+
+      initAudio();
+      touchActive = true;
+      touchStartX = e.clientX;
+      touchStartY = e.clientY;
+
+      joystickContainer.style.left = `${touchStartX}px`;
+      joystickContainer.style.top = `${touchStartY}px`;
+      joystickContainer.classList.remove('hidden');
+      joystickStick.style.transform = `translate(0px, 0px)`;
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!touchActive || !player || player.isDead) return;
+
+      const dx = e.clientX - touchStartX;
+      const dy = e.clientY - touchStartY;
+      const maxRadius = 40;
+      const dist = Math.min(maxRadius, Math.sqrt(dx * dx + dy * dy));
+
+      if (dist > 5) {
+        const angle = Math.atan2(dx, dy);
+        player.targetDir = angle;
+
+        const moveX = Math.sin(angle) * dist;
+        const moveY = Math.cos(angle) * dist;
+        joystickStick.style.transform = `translate(${moveX}px, ${moveY}px)`;
+      }
+    });
+
+    window.addEventListener('pointerup', () => {
+      touchActive = false;
+      joystickContainer.classList.add('hidden');
+    });
+
+    // GAME ANIMATION LOOP
+    function animate() {
+      if (!isPlaying) return;
+
+      animationFrameId = requestAnimationFrame(animate);
+
+      if (player && !player.isDead) {
+        player.update();
+
+        const head = player.segments[0];
+        camera.position.x = head.position.x;
+        camera.position.z = head.position.z + 14;
+        camera.lookAt(head.position.x, 0, head.position.z);
+
+        // Futter fressen
+        for (let i = foods.length - 1; i >= 0; i--) {
+          const f = foods[i];
+          if (head.position.distanceTo(f.position) < 0.8) {
+            scene.remove(f);
+            foods.splice(i, 1);
+            player.score += 10;
+            playPopSound();
+
+            if (player.score % 30 === 0) {
+              const tail = player.segments[player.segments.length - 1];
+              player.addSegment(tail.position.x, tail.position.z);
             }
 
-            scene.remove(item);
-            items.splice(i, 1);
-            continue;
+            document.getElementById('score-val').textContent = player.score;
+            document.getElementById('length-val').textContent = player.segments.length;
+            spawnFood();
+          }
         }
 
-        if (item.position.z > 10) {
-            scene.remove(item);
-            items.splice(i, 1);
+        // Kollision mit Bots
+        bots.forEach(bot => {
+          if (bot.isDead) return;
+          for (let i = 0; i < bot.segments.length; i++) {
+            if (head.position.distanceTo(bot.segments[i].position) < 0.65) {
+              player.die();
+              break;
+            }
+          }
+          const botHead = bot.segments[0];
+          for (let i = 0; i < player.segments.length; i++) {
+            if (botHead.position.distanceTo(player.segments[i].position) < 0.65) {
+              bot.die();
+              break;
+            }
+          }
+        });
+      }
+
+      // Bots Update
+      bots.forEach(bot => {
+        if (bot.isDead) return;
+
+        if (Math.random() < 0.02) bot.targetDir += (Math.random() - 0.5) * 1.5;
+        const bHead = bot.segments[0];
+        if (Math.abs(bHead.position.x) > ARENA_SIZE - 3 || Math.abs(bHead.position.z) > ARENA_SIZE - 3) {
+          bot.targetDir = Math.atan2(-bHead.position.x, -bHead.position.z);
         }
+
+        bot.update();
+
+        for (let i = foods.length - 1; i >= 0; i--) {
+          if (bHead.position.distanceTo(foods[i].position) < 0.8) {
+            scene.remove(foods[i]);
+            foods.splice(i, 1);
+            bot.score += 10;
+            if (bot.score % 40 === 0) {
+              const tail = bot.segments[bot.segments.length - 1];
+              bot.addSegment(tail.position.x, tail.position.z);
+            }
+            spawnFood();
+          }
+        }
+      });
+
+      bots = bots.filter(b => !b.isDead);
+      while (bots.length < 6) {
+        const bx = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
+        const bz = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
+        const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+        bots.push(new Worm(false, color, bx, bz));
+      }
+
+      const time = Date.now() * 0.003;
+      foods.forEach((f, idx) => {
+        f.position.y = 0.3 + Math.sin(time + idx) * 0.08;
+        f.rotation.y += 0.02;
+      });
+
+      renderer.render(scene, camera);
     }
-}
 
-function animate() {
-    requestAnimationFrame(animate);
-    update();
-    renderer.render(scene, camera);
-}
+    // SPIEL START & OVER
+    function startGame() {
+      const name = nameInput.value.trim() || 'WurmPlayer';
+      localStorage.setItem('worm_player_name', name);
 
-animate();
+      if (player) scene.remove(player.meshGroup);
+      bots.forEach(b => scene.remove(b.meshGroup));
+      foods.forEach(f => scene.remove(f));
 
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-});
-</script>
+      bots = [];
+      foods = [];
+
+      // Erstelle den Spieler mit der gewählten Skin-Farbe
+      player = new Worm(true, selectedSkin, 0, 0);
+
+      for (let i = 0; i < 50; i++) spawnFood();
+      for (let i = 0; i < 6; i++) {
+        const bx = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
+        const bz = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
+        const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+        bots.push(new Worm(false, color, bx, bz));
+      }
+
+      document.getElementById('score-val').textContent = '0';
+      document.getElementById('length-val').textContent = player.segments.length;
+
+      document.getElementById('start-menu').classList.add('hidden');
+      document.getElementById('gameover-menu').classList.add('hidden');
+      document.getElementById('hud').classList.remove('hidden');
+
+      isPlaying = true;
+      animate();
+    }
+
+    function onGameOver(score) {
+      isPlaying = false;
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+      document.getElementById('hud').classList.add('hidden');
+      document.getElementById('final-score').textContent = Math.floor(score);
+      document.getElementById('gameover-menu').classList.remove('hidden');
+
+      const pName = nameInput.value.trim() || 'WurmPlayer';
+      saveScore(pName, score);
+    }
+
+    document.getElementById('start-btn').addEventListener('click', () => {
+      initAudio();
+      startGame();
+    });
+
+    document.getElementById('restart-btn').addEventListener('click', () => {
+      initAudio();
+      loadLeaderboard();
+      document.getElementById('gameover-menu').classList.add('hidden');
+      document.getElementById('start-menu').classList.remove('hidden');
+    });
+
+    initThree();
+    loadLeaderboard();
+  </script>
 </body>
 </html>
