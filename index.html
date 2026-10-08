@@ -340,6 +340,47 @@
       if (rand < 95) return { color: 0xa855f7, points: 10, scale: 0.35 };    // 10% Lila
       return { color: 0xeab308, points: 40, scale: 0.45 };                   // 5% Gold
     }
+// Erstellt das smaragdgrüne Teppich-Muster mit weißen Bögen & Strichen
+function createRugTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  // 1. Smaragdgrüner Hintergrund
+  ctx.fillStyle = '#064e3b'; // Edles, dunkles Smaragdgrün
+  ctx.fillRect(0, 0, 512, 512);
+
+  // 2. Weiße Linien & Bögen zeichnen
+  ctx.strokeStyle = '#ffffff'; // Weiß
+  ctx.lineWidth = 8;           // Dicke der Striche
+  ctx.lineCap = 'round';
+
+  // Halbkreis / Bogen oben
+  ctx.beginPath();
+  ctx.arc(256, 0, 160, 0, Math.PI);
+  ctx.stroke();
+
+  // Halbkreis / Bogen unten
+  ctx.beginPath();
+  ctx.arc(256, 512, 160, Math.PI, 0);
+  ctx.stroke();
+
+  // Moderne Striche / Linien
+  ctx.beginPath();
+  ctx.moveTo(80, 200);
+  ctx.lineTo(80, 312);
+  ctx.moveTo(432, 200);
+  ctx.lineTo(432, 312);
+  ctx.stroke();
+
+  // Wandelt das Gezeichnete in eine Three.js Textur um
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(12, 12); // Wie oft sich das Muster kachelt (wiederholt)
+  return texture;
+}
 
     function initThree() {
       renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
