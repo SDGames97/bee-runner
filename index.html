@@ -612,9 +612,22 @@
         player.update();
 
         const head = player.segments[0];
-        camera.position.x = head.position.x;
-        camera.position.z = head.position.z + 14;
-        camera.lookAt(head.position.x, 0, head.position.z);
+
+// Berechnet den Kameraschub basierend auf der Segment-Anzahl (Länge des Wurms)
+const baseDistance = 14;
+const baseHeight = 18;
+const growthFactor = Math.min(player.segments.length * 0.25, 25); // Maximal +25 Abstand
+
+// Reibungslose Annäherung der Kamera
+const targetCamZ = head.position.z + baseDistance + growthFactor;
+const targetCamY = baseHeight + (growthFactor * 0.8);
+
+camera.position.x = head.position.x;
+camera.position.y += (targetCamY - camera.position.y) * 0.05; // Weicher Übergang
+camera.position.z += (targetCamZ - camera.position.z) * 0.05; // Weicher Übergang
+
+camera.lookAt(head.position.x, 0, head.position.z);
+
 
         // Futter fressen
         for (let i = foods.length - 1; i >= 0; i--) {
