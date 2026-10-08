@@ -575,6 +575,10 @@
     window.addEventListener('pointerup', () => {
       touchActive = false;
       joystickContainer.classList.add('hidden');
+        if (player && !player.isDead) {
+    player.targetDir = player.dir;
+  }
+
     });
 
     // GAME ANIMATION LOOP
