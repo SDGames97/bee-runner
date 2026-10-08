@@ -405,15 +405,21 @@ function createRugTexture() {
       scene.add(dirLight);
 
       const groundGeo = new THREE.PlaneGeometry(ARENA_SIZE * 2, ARENA_SIZE * 2);
-      const groundMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7, metalness: 0.1 });
-      const ground = new THREE.Mesh(groundGeo, groundMat);
-      ground.rotation.x = -Math.PI / 2;
-      ground.receiveShadow = true;
-      scene.add(ground);
 
-      const grid = new THREE.GridHelper(ARENA_SIZE * 2, 40, 0x38bdf8, 0x334155);
-      grid.position.y = 0.01;
-      scene.add(grid);
+// NEU: Verwendet jetzt deine neue Teppich-Textur!
+const groundMat = new THREE.MeshStandardMaterial({ 
+  map: createRugTexture(), 
+  roughness: 0.8 
+});
+
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Das alte blaue Gitter (GridHelper) löschen wir oder kommentieren es aus,
+// damit das Teppichmuster schön zur Geltung kommt!
+
 
       window.addEventListener('resize', onWindowResize);
     }
