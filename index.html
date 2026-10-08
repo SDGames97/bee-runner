@@ -1,1229 +1,745 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D WormRing Arena</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Three.js 3D Engine -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap');
-        
-        * {
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: manipulation;
-            font-family: 'Outfit', sans-serif;
-        }
-
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #090d16;
-            color: #ffffff;
-        }
-
-        #game-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-        }
-
-        .glass-btn {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .glass-btn:hover {
-            transform: translateY(-2px);
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1));
-            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
-        }
-
-        .glass-btn:active {
-            transform: translateY(1px);
-        }
-
-        /* Custom Joystick overlay */
-        #joystick-zone {
-            position: absolute;
-            bottom: 30px;
-            left: 30px;
-            width: 140px;
-            height: 140px;
-            z-index: 20;
-            touch-action: none;
-        }
-
-        .joystick-base {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.08);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            position: relative;
-            backdrop-filter: blur(4px);
-        }
-
-        .joystick-stick {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #3b82f6, #6366f1);
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
-            pointer-events: none;
-        }
-
-        /* Pulse animation for gold food indicator */
-        @keyframes goldGlow {
-            0% { transform: scale(1); filter: drop-shadow(0 0 5px #eab308); }
-            50% { transform: scale(1.1); filter: drop-shadow(0 0 15px #f59e0b); }
-            100% { transform: scale(1); filter: drop-shadow(0 0 5px #eab308); }
-        }
-
-        .gold-pulse {
-            animation: goldGlow 1.5s infinite;
-        }
-
-        /* Score floating animation */
-        @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-40px) scale(1.2); }
-        }
-
-        .floating-score {
-            position: absolute;
-            pointer-events: none;
-            font-weight: 900;
-            animation: floatUp 0.8s ease-out forwards;
-            z-index: 30;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>WORMRING 3D</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js Engine -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Firebase SDKs via CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #game-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
 </head>
-<body>
+<body class="bg-slate-900 text-white">
 
-    <!-- 3D WebGL Canvas -->
-    <canvas id="game-canvas"></canvas>
+  <!-- 3D Spiel Canvas -->
+  <canvas id="game-canvas"></canvas>
 
-    <!-- In-Game HUD Overlay (Only visible during active gameplay) -->
-    <div id="in-game-hud" class="hidden absolute inset-0 pointer-events-none z-10 flex flex-col justify-between p-4 sm:p-6">
-        <!-- Top Bar: Scores & Settings Icon -->
-        <div class="flex items-center justify-between w-full">
-            <div class="flex items-center gap-3">
-                <!-- Score Card -->
-                <div class="glass-panel px-4 py-2 rounded-2xl flex items-center gap-3 pointer-events-auto">
-                    <i class="fa-solid fa-trophy text-amber-400 text-xl"></i>
-                    <div>
-                        <div class="text-xs uppercase tracking-wider text-gray-400 font-semibold">Score</div>
-                        <div id="hud-score" class="text-2xl font-black text-white">0</div>
-                    </div>
-                </div>
+  <!-- Settings Button (Oben rechts auf dem HUD) -->
+  <button id="settings-btn" class="absolute top-4 right-4 z-10 bg-slate-800/80 hover:bg-slate-700/80 backdrop-blur-md p-3 rounded-2xl shadow-lg border border-slate-600 text-xl transition active:scale-90">
+    ⚙️
+  </button>
 
-                <!-- Length Card -->
-                <div class="glass-panel px-4 py-2 rounded-2xl flex items-center gap-3 pointer-events-auto">
-                    <i class="fa-solid fa-ruler-horizontal text-cyan-400 text-xl"></i>
-                    <div>
-                        <div class="text-xs uppercase tracking-wider text-gray-400 font-semibold">Length</div>
-                        <div id="hud-length" class="text-2xl font-black text-white">10</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Settings Gear Button (FIXED: Cleanly embedded inside HUD with proper z-index and pointer-events) -->
-            <button id="hud-settings-btn" class="glass-panel glass-btn w-12 h-12 rounded-2xl flex items-center justify-center text-white text-xl pointer-events-auto shadow-lg hover:rotate-45">
-                <i class="fa-solid fa-gear"></i>
-            </button>
-        </div>
-
-        <!-- Food Rarity Legend Helper -->
-        <div class="hidden md:flex gap-3 justify-center items-center glass-panel px-4 py-2 rounded-xl text-xs font-semibold self-center pointer-events-auto opacity-80 hover:opacity-100 transition-opacity">
-            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-gray-400"></span> Grey (+1)</span>
-            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-green-500"></span> Green (+2)</span>
-            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Blue (+5)</span>
-            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span> Purple (+10)</span>
-            <span class="flex items-center gap-1 gold-pulse"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Gold (+40)</span>
-        </div>
-
-        <!-- Bottom Controls Bar (Boost Button) -->
-        <div class="flex justify-between items-end w-full">
-            <!-- Space for Mobile Joystick (Left side) -->
-            <div id="joystick-zone" class="pointer-events-auto">
-                <div class="joystick-base">
-                    <div id="joystick-stick" class="joystick-stick"></div>
-                </div>
-            </div>
-
-            <!-- Boost Button (Right side) -->
-            <button id="boost-btn" class="pointer-events-auto glass-panel glass-btn px-6 py-4 rounded-2xl flex items-center gap-3 text-amber-400 font-extrabold text-lg shadow-xl active:scale-95 border border-amber-500/30">
-                <i class="fa-solid fa-bolt text-2xl"></i>
-                <div class="text-left">
-                    <div class="text-xs text-amber-300/80 font-normal">HOLD FOR BOOST</div>
-                    <div>SPEED UP</div>
-                </div>
-            </button>
-        </div>
+  <!-- Dynamischer Touch-Joystick Overlay -->
+  <div id="joystick-container" class="absolute pointer-events-none hidden" style="transform: translate(-50%, -50%); z-index: 10;">
+    <div id="joystick-base" class="w-24 h-24 rounded-full bg-white/20 border-2 border-white/50 backdrop-blur-md flex items-center justify-center relative shadow-2xl">
+      <div id="joystick-stick" class="w-10 h-10 rounded-full bg-cyan-400 border-2 border-white shadow-lg transition-transform duration-75"></div>
     </div>
+  </div>
 
-    <!-- Main Start Menu Overlay -->
-    <div id="main-menu" class="absolute inset-0 z-40 flex items-center justify-center p-4">
-        <div class="glass-panel w-full max-w-md p-8 rounded-3xl flex flex-col items-center gap-6 text-center border border-white/20">
-            <!-- Title Header -->
-            <div>
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs font-semibold uppercase tracking-widest mb-2 border border-blue-500/30">
-                    <i class="fa-solid fa-circle-dot text-xs"></i> 3D Snake Arcade
-                </div>
-                <h1 class="text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 drop-shadow-md">
-                    WORM RING
-                </h1>
-            </div>
-
-            <!-- Player Name Input -->
-            <div class="w-full text-left">
-                <label class="text-xs uppercase font-bold text-gray-400 tracking-wider mb-2 block">Player Name</label>
-                <div class="relative">
-                    <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                    <input type="text" id="player-name-input" maxlength="15" value="WormMaster" class="w-full bg-slate-900/80 border border-white/10 rounded-2xl py-3 pl-11 pr-4 text-white font-semibold focus:outline-none focus:border-blue-500 transition-colors">
-                </div>
-            </div>
-
-            <!-- Skin Selector Carousel -->
-            <div class="w-full text-left">
-                <label class="text-xs uppercase font-bold text-gray-400 tracking-wider mb-2 block">Select Worm Skin</label>
-                <div class="flex items-center justify-between bg-slate-900/60 border border-white/10 rounded-2xl p-3">
-                    <button id="prev-skin-btn" class="glass-btn w-10 h-10 rounded-xl flex items-center justify-center text-gray-300 hover:text-white">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
-                    <div class="flex items-center gap-3">
-                        <div id="skin-preview-color" class="w-8 h-8 rounded-full shadow-lg border-2 border-white/50"></div>
-                        <span id="skin-preview-name" class="font-bold text-lg text-white">Neon Cyber</span>
-                    </div>
-                    <button id="next-skin-btn" class="glass-btn w-10 h-10 rounded-xl flex items-center justify-center text-gray-300 hover:text-white">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Steering Difficulty Note -->
-            <div class="w-full bg-indigo-950/40 border border-indigo-500/20 rounded-2xl p-3 text-xs text-indigo-300/90 text-left flex items-start gap-2.5">
-                <i class="fa-solid fa-triangle-exclamation text-amber-400 text-sm mt-0.5"></i>
-                <span><strong>Heavy Steering Physics:</strong> Worm turning radius is limited. Maneuver carefully and avoid touching your own body!</span>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="flex flex-col w-full gap-3 mt-2">
-                <button id="start-game-btn" class="glass-btn w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-3">
-                    <i class="fa-solid fa-play"></i> START GAME
-                </button>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <button id="open-leaderboard-btn" class="glass-btn py-3 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 text-gray-200">
-                        <i class="fa-solid fa-trophy text-amber-400"></i> High Scores
-                    </button>
-                    <button id="open-settings-btn" class="glass-btn py-3 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 text-gray-200">
-                        <i class="fa-solid fa-sliders text-blue-400"></i> Settings
-                    </button>
-                </div>
-            </div>
-        </div>
+  <!-- HUD Overlay (Punkte & Länge) -->
+  <div id="hud" class="absolute top-4 left-4 right-20 flex justify-between items-center pointer-events-none hidden z-10">
+    <div class="bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-cyan-500/30 text-white font-bold text-base md:text-lg">
+      🌟 Punkte: <span id="score-val" class="text-cyan-400">0</span>
     </div>
-
-    <!-- Game Over Modal Overlay -->
-    <div id="game-over-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-        <div class="glass-panel w-full max-w-md p-8 rounded-3xl flex flex-col items-center text-center border border-red-500/30 animate-bounce-in">
-            <div class="w-16 h-16 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400 text-3xl mb-4">
-                <i class="fa-solid fa-skull"></i>
-            </div>
-            
-            <h2 class="text-4xl font-black text-white tracking-tight mb-1">GAME OVER</h2>
-            <p id="death-reason" class="text-sm font-semibold text-red-400 mb-6">You collided with yourself!</p>
-
-            <div class="grid grid-cols-2 gap-4 w-full bg-slate-900/60 p-4 rounded-2xl border border-white/10 mb-6">
-                <div class="text-center">
-                    <div class="text-xs uppercase font-bold text-gray-400">Final Score</div>
-                    <div id="final-score" class="text-3xl font-black text-amber-400">0</div>
-                </div>
-                <div class="text-center border-l border-white/10">
-                    <div class="text-xs uppercase font-bold text-gray-400">Length Reached</div>
-                    <div id="final-length" class="text-3xl font-black text-cyan-400">0</div>
-                </div>
-            </div>
-
-            <div class="flex flex-col w-full gap-3">
-                <button id="restart-game-btn" class="glass-btn w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-lg shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-rotate-right"></i> PLAY AGAIN
-                </button>
-                <button id="return-menu-btn" class="glass-btn w-full py-3 rounded-2xl text-gray-300 font-bold hover:text-white flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-house"></i> Main Menu
-                </button>
-            </div>
-        </div>
+    <div class="bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-amber-500/30 text-white font-bold text-xs md:text-sm">
+      🐍 Länge: <span id="length-val" class="text-amber-400">6</span>
     </div>
+  </div>
 
-    <!-- Settings Modal -->
-    <div id="settings-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-        <div class="glass-panel w-full max-w-md p-6 rounded-3xl flex flex-col gap-5 border border-white/20">
-            <div class="flex justify-between items-center border-b border-white/10 pb-3">
-                <h3 class="text-2xl font-black text-white flex items-center gap-2">
-                    <i class="fa-solid fa-gear text-blue-400"></i> Settings
-                </h3>
-                <button id="close-settings-btn" class="text-gray-400 hover:text-white text-xl">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
+  <!-- Startmenü & Leaderboard -->
+  <div id="start-menu" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-20">
+    <div class="bg-slate-900/95 p-6 rounded-3xl shadow-2xl border border-cyan-500/30 max-w-md w-full text-center relative overflow-hidden">
+      
+      <h1 class="text-4xl font-black text-cyan-400 drop-shadow-[0_2px_10px_rgba(34,211,238,0.8)] tracking-wide mb-1">🐛 WORMRING</h1>
+      <p class="text-slate-400 text-xs mb-5">Sammle Futter, wende vorsichtig & überlebe!</p>
 
-            <!-- SFX Volume -->
-            <div class="space-y-2">
-                <div class="flex justify-between text-sm font-semibold">
-                    <span class="text-gray-300">Sound Effects (SFX)</span>
-                    <span id="sfx-val-text" class="text-blue-400">100%</span>
-                </div>
-                <input type="range" id="sfx-volume-slider" min="0" max="1" step="0.05" value="1" class="w-full accent-blue-500 cursor-pointer">
-            </div>
+      <!-- Spielername Input -->
+      <div class="mb-4 text-left">
+        <label for="player-name" class="block text-xs font-bold text-cyan-300 uppercase mb-1">Dein Spielername</label>
+        <input type="text" id="player-name" placeholder="SpaceWorm" maxlength="15" class="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-400 text-white font-bold text-base transition">
+      </div>
 
-            <!-- Camera Distance Slider -->
-            <div class="space-y-2">
-                <div class="flex justify-between text-sm font-semibold">
-                    <span class="text-gray-300">Camera Zoom Distance</span>
-                    <span id="cam-val-text" class="text-blue-400">Normal</span>
-                </div>
-                <input type="range" id="camera-distance-slider" min="30" max="60" step="1" value="42" class="w-full accent-blue-500 cursor-pointer">
-            </div>
+      <!-- Start Button -->
+      <button id="start-btn" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 active:scale-95 text-white font-black text-lg rounded-2xl shadow-lg shadow-cyan-500/25 transition duration-150 mb-5">
+        SPIEL STARTEN ▶
+      </button>
 
-            <button id="apply-settings-btn" class="glass-btn py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold mt-2">
-                Save & Close
-            </button>
+      <!-- Leaderboard Liste -->
+      <div class="border-t border-slate-800 pt-3 text-left">
+        <div class="flex justify-between items-center mb-2">
+          <h2 class="text-xs font-bold text-slate-400 uppercase flex items-center gap-1">🏆 Top Highscores</h2>
+          <span id="lb-status" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold">Online</span>
         </div>
-    </div>
-
-    <!-- Leaderboard Modal -->
-    <div id="leaderboard-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-        <div class="glass-panel w-full max-w-md p-6 rounded-3xl flex flex-col gap-4 border border-white/20 max-h-[85vh]">
-            <div class="flex justify-between items-center border-b border-white/10 pb-3">
-                <h3 class="text-2xl font-black text-white flex items-center gap-2">
-                    <i class="fa-solid fa-trophy text-amber-400"></i> Top Worms
-                </h3>
-                <button id="close-leaderboard-btn" class="text-gray-400 hover:text-white text-xl">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <div id="leaderboard-list" class="flex flex-col gap-2 overflow-y-auto pr-1 my-2">
-                <div class="text-center text-gray-400 py-6">Loading scores...</div>
-            </div>
-
-            <button id="back-from-leaderboard-btn" class="glass-btn py-3 rounded-2xl bg-slate-800 text-white font-bold">
-                Back
-            </button>
+        <div class="bg-slate-800/50 rounded-2xl p-2.5 border border-slate-800 max-h-36 overflow-y-auto">
+          <ol id="leaderboard-list" class="text-xs font-semibold text-slate-300 divide-y divide-slate-800/50">
+            <li class="py-2 text-center text-slate-500 italic">Lade Bestenliste...</li>
+          </ol>
         </div>
+      </div>
     </div>
+  </div>
 
-    <!-- Firebase Script Module -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  <!-- Einstellungen Modal -->
+  <div id="settings-modal" class="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 p-6 rounded-3xl border border-slate-700 max-w-xs w-full text-center shadow-2xl">
+      <h2 class="text-2xl font-black text-cyan-400 mb-4">Einstellungen</h2>
+      
+      <div class="space-y-4 mb-6 text-left">
+        <div class="flex justify-between items-center bg-slate-800 p-3 rounded-xl border border-slate-700">
+          <span class="text-sm font-bold text-slate-300">🔊 Soundeffekte</span>
+          <input type="checkbox" id="sound-toggle" checked class="w-5 h-5 accent-cyan-500">
+        </div>
+        <button id="reset-scores-btn" class="w-full py-2.5 bg-rose-950/60 hover:bg-rose-900 border border-rose-800 text-rose-300 text-xs font-bold rounded-xl transition">
+          Lokale Highscores löschen
+        </button>
+      </div>
 
-        // Firebase Setup
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'wormring-16620';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "AIzaSyDemoKeyOnlyForPublicArtifacts",
-            authDomain: "wormring-16620.firebaseapp.com",
-            projectId: "wormring-16620",
-            storageBucket: "wormring-16620.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abcdef"
-        };
+      <button id="close-settings-btn" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm rounded-xl border border-slate-600 transition">
+        Schließen
+      </button>
+    </div>
+  </div>
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+  <!-- Game Over Screen -->
+  <div id="gameover-menu" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-30 hidden">
+    <div class="bg-slate-900 p-6 rounded-3xl shadow-2xl border border-rose-500/40 max-w-sm w-full text-center">
+      <div class="text-5xl mb-2">💥</div>
+      <h2 class="text-3xl font-black text-rose-500 mb-2">Game Over!</h2>
+      <p class="text-slate-400 text-sm mb-4">Du bist zusammengestoßen.</p>
+      
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 mb-6">
+        <div class="text-xs text-amber-400 font-bold uppercase mb-1">Erreichte Punkte</div>
+        <div id="final-score" class="text-4xl font-extrabold text-cyan-400">0</div>
+      </div>
 
-        let currentUser = null;
+      <button id="restart-btn" class="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 active:scale-95 text-white font-black text-xl rounded-2xl shadow-lg transition">
+        NOCHMAL SPIELEN 🔄
+      </button>
+    </div>
+  </div>
 
-        // Authenticate anonymously or with custom token
-        async function initAuth() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    const res = await signInWithCustomToken(auth, __initial_auth_token);
-                    currentUser = res.user;
-                } else {
-                    const res = await signInAnonymously(auth);
-                    currentUser = res.user;
-                }
-            } catch (err) {
-                console.warn("Auth initialization fallback:", err);
-            }
+  <script>
+    // ==========================================
+    // FIREBASE KONFIGURATION
+    // ==========================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyDK77MSnstrk4Q3XW0-Pd7LEMCQuRd1NjM",
+      authDomain: "wormring-16620.firebaseapp.com",
+      projectId: "wormring-16620",
+      storageBucket: "wormring-16620.firebasestorage.app",
+      messagingSenderId: "1066548218415",
+      appId: "1:1066548218415:web:25358a6ab6cda5ce11d4da",
+      measurementId: "G-QQ0CSTRFR9"
+    };
+
+    let db = null;
+    let isFirebaseActive = false;
+
+    try {
+      if (typeof firebase !== 'undefined') {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        isFirebaseActive = true;
+      }
+    } catch(e) {
+      console.warn("Firebase Init Hinweis:", e);
+    }
+
+    // ==========================================
+    // EINSTELLUNGEN LOGIK
+    // ==========================================
+    let soundEnabled = true;
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsModal = document.getElementById('settings-modal');
+    const closeSettingsBtn = document.getElementById('close-settings-btn');
+    const soundToggle = document.getElementById('sound-toggle');
+    const resetScoresBtn = document.getElementById('reset-scores-btn');
+
+    settingsBtn.addEventListener('click', () => settingsModal.classList.remove('hidden'));
+    closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
+    soundToggle.addEventListener('change', (e) => soundEnabled = e.target.checked);
+    resetScoresBtn.addEventListener('click', () => {
+      if (confirm('Möchtest du die lokalen Highscores löschen?')) {
+        localStorage.removeItem('worm_scores');
+        loadLeaderboard();
+        alert('Lokale Highscores gelöscht!');
+      }
+    });
+
+    // ==========================================
+    // AUDIO SYNTHESIZER
+    // ==========================================
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new AudioCtx();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playPopSound() {
+      if (!soundEnabled || !audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.08);
+      } catch(e){}
+    }
+
+    function playHitSound() {
+      if (!soundEnabled || !audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(160, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(30, audioCtx.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.25);
+      } catch(e){}
+    }
+
+    // ==========================================
+    // LEADERBOARD LOGIK
+    // ==========================================
+    const lbStatusEl = document.getElementById('lb-status');
+    const lbListEl = document.getElementById('leaderboard-list');
+
+    function updateLBStatus(online) {
+      if (online) {
+        lbStatusEl.textContent = "Online Cloud";
+        lbStatusEl.className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold";
+      } else {
+        lbStatusEl.textContent = "Lokal";
+        lbStatusEl.className = "text-[10px] px-2 py-0.5 rounded-full bg-amber-950 text-amber-400 border border-amber-800 font-bold";
+      }
+    }
+
+    function loadLeaderboard() {
+      if (isFirebaseActive && db) {
+        db.collection("leaderboard")
+          .orderBy("score", "desc")
+          .limit(10)
+          .onSnapshot((snapshot) => {
+            updateLBStatus(true);
+            const scores = [];
+            snapshot.forEach(doc => scores.push(doc.data()));
+            renderLeaderboardUI(scores);
+          }, (err) => {
+            loadLocalLeaderboard();
+          });
+      } else {
+        loadLocalLeaderboard();
+      }
+    }
+
+    function loadLocalLeaderboard() {
+      updateLBStatus(false);
+      const local = JSON.parse(localStorage.getItem('worm_scores') || '[]');
+      renderLeaderboardUI(local);
+    }
+
+    function renderLeaderboardUI(scores) {
+      lbListEl.innerHTML = '';
+      if (!scores || scores.length === 0) {
+        lbListEl.innerHTML = '<li class="py-2 text-center text-slate-500 italic">Noch keine Highscores vorhanden</li>';
+        return;
+      }
+      scores.slice(0, 10).forEach((entry, idx) => {
+        const li = document.createElement('li');
+        li.className = "py-1.5 flex justify-between items-center font-semibold";
+        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+        li.innerHTML = `
+          <span class="flex items-center gap-2">
+            <span class="w-5 text-center font-bold text-slate-500 text-[10px]">${medal}</span>
+            <span class="text-slate-200">${escapeHtml(entry.name || 'Anonym')}</span>
+          </span>
+          <span class="text-cyan-400 font-black">${Math.floor(entry.score || 0)}</span>
+        `;
+        lbListEl.appendChild(li);
+      });
+    }
+
+    async function saveScore(name, score) {
+      const cleanScore = Math.floor(score);
+      const cleanName = name.trim() || 'WurmPlayer';
+
+      const local = JSON.parse(localStorage.getItem('worm_scores') || '[]');
+      local.push({ name: cleanName, score: cleanScore, date: new Date().toISOString() });
+      local.sort((a,b) => b.score - a.score);
+      localStorage.setItem('worm_scores', JSON.stringify(local.slice(0, 20)));
+
+      if (isFirebaseActive && db) {
+        try {
+          await db.collection("leaderboard").add({
+            name: cleanName,
+            score: cleanScore,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        } catch(e){}
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+      });
+    }
+
+    const nameInput = document.getElementById('player-name');
+    nameInput.value = localStorage.getItem('worm_player_name') || 'Wurm' + Math.floor(Math.random()*1000);
+
+    // ==========================================
+    // THREE.JS & SPIEL ENGINES
+    // ==========================================
+    const canvas = document.getElementById('game-canvas');
+    let renderer, scene, camera;
+    let isPlaying = false;
+    let animationFrameId = null;
+
+    const SPEED = 0.085; 
+    const SEGMENT_DISTANCE = 0.42;
+    const MAX_TURN_SPEED = 0.038; // SCHWERE LENKUNG (Maximaler Drehwinkel pro Frame)
+    const ARENA_SIZE = 40;
+
+    let player;
+    let bots = [];
+    let foods = [];
+
+    const BOT_COLORS = [0xff595e, 0x8ac926, 0x6a4c93, 0xffca3a, 0xff924c];
+
+    // ESSEN PROBABILITÄTEN (40% Grau, 30% Grün, 15% Blau, 10% Lila, 5% Gold)
+    function getRandomFoodType() {
+      const rand = Math.random() * 100;
+      if (rand < 40) return { color: 0x9ca3af, points: 1, scale: 0.22 };     // 40% Grau
+      if (rand < 70) return { color: 0x22c55e, points: 2, scale: 0.26 };     // 30% Grün
+      if (rand < 85) return { color: 0x3b82f6, points: 5, scale: 0.30 };     // 15% Blau
+      if (rand < 95) return { color: 0xa855f7, points: 10, scale: 0.35 };    // 10% Lila
+      return { color: 0xeab308, points: 40, scale: 0.45 };                   // 5% Gold
+    }
+
+    function initThree() {
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0f172a);
+      scene.fog = new THREE.FogExp2(0x0f172a, 0.018);
+
+      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 18, 14);
+      camera.lookAt(0, 0, 0);
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0x38bdf8, 1.0);
+      dirLight.position.set(20, 40, 20);
+      dirLight.castShadow = true;
+      scene.add(dirLight);
+
+      const groundGeo = new THREE.PlaneGeometry(ARENA_SIZE * 2, ARENA_SIZE * 2);
+      const groundMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7, metalness: 0.1 });
+      const ground = new THREE.Mesh(groundGeo, groundMat);
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      const grid = new THREE.GridHelper(ARENA_SIZE * 2, 40, 0x38bdf8, 0x334155);
+      grid.position.y = 0.01;
+      scene.add(grid);
+
+      window.addEventListener('resize', onWindowResize);
+    }
+
+    function onWindowResize() {
+      if (!camera || !renderer) return;
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // WURM KLASSE (Mit Selbstberührungs-Kollision & Schwerer Lenkung)
+    class Worm {
+      constructor(isPlayer = false, color = 0x1982c4, startX = 0, startZ = 0) {
+        this.isPlayer = isPlayer;
+        this.color = color;
+        this.score = 0;
+        this.dir = Math.random() * Math.PI * 2;
+        this.targetDir = this.dir;
+        this.isDead = false;
+
+        this.segments = [];
+        this.meshGroup = new THREE.Group();
+        scene.add(this.meshGroup);
+
+        const headMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.2, metalness: 0.2 });
+
+        const headGeo = new THREE.SphereGeometry(0.5, 16, 16);
+        const headMesh = new THREE.Mesh(headGeo, headMat);
+        headMesh.castShadow = true;
+        headMesh.position.set(startX, 0.5, startZ);
+        this.meshGroup.add(headMesh);
+        this.segments.push(headMesh);
+
+        // Augen
+        const eyeGeo = new THREE.SphereGeometry(0.12, 8, 8);
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+
+        const eyeLeft = new THREE.Mesh(eyeGeo, eyeMat);
+        eyeLeft.position.set(-0.2, 0.22, 0.3);
+        headMesh.add(eyeLeft);
+        const pupilLeft = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), pupilMat);
+        pupilLeft.position.set(0, 0, 0.08);
+        eyeLeft.add(pupilLeft);
+
+        const eyeRight = new THREE.Mesh(eyeGeo, eyeMat);
+        eyeRight.position.set(0.2, 0.22, 0.3);
+        headMesh.add(eyeRight);
+        const pupilRight = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), pupilMat);
+        pupilRight.position.set(0, 0, 0.08);
+        eyeRight.add(pupilRight);
+
+        // Start-Segmente
+        for (let i = 0; i < 6; i++) {
+          this.addSegment(startX - (i + 1) * SEGMENT_DISTANCE * Math.sin(this.dir), startZ - (i + 1) * SEGMENT_DISTANCE * Math.cos(this.dir));
         }
-        initAuth();
+      }
 
-        // Save Highscore to Firestore
-        window.saveHighScoreToFirebase = async function(playerName, score) {
-            if (!currentUser) return;
-            try {
-                const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'leaderboard', currentUser.uid);
-                await setDoc(userDocRef, {
-                    name: playerName || 'WormPlayer',
-                    score: score,
-                    timestamp: Date.now()
-                }, { merge: true });
-            } catch (e) {
-                console.error("Failed to save score:", e);
-            }
-        };
+      addSegment(x, z) {
+        const scale = Math.max(0.28, 0.46 - this.segments.length * 0.002);
+        const bodyGeo = new THREE.SphereGeometry(scale, 12, 12);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: this.color, roughness: 0.3 });
+        const mesh = new THREE.Mesh(bodyGeo, bodyMat);
+        mesh.castShadow = true;
+        mesh.position.set(x, scale, z);
+        this.meshGroup.add(mesh);
+        this.segments.push(mesh);
+      }
 
-        // Listen for Highscores
-        window.subscribeLeaderboard = function(callback) {
-            try {
-                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
-                onSnapshot(colRef, (snapshot) => {
-                    const scores = [];
-                    snapshot.forEach(docSnap => {
-                        scores.push(docSnap.data());
-                    });
-                    // Memory sort descending
-                    scores.sort((a, b) => (b.score || 0) - (a.score || 0));
-                    callback(scores.slice(0, 10));
-                }, (err) => {
-                    console.error("Leaderboard snapshot error:", err);
-                });
-            } catch (err) {
-                console.error("Leaderboard sub error:", err);
-            }
-        };
-    </script>
+      update() {
+        if (this.isDead) return;
 
-    <script>
-        /* Web Audio API Audio Synthesizer */
-        class SoundEngine {
-            constructor() {
-                this.ctx = null;
-                this.sfxVolume = 1.0;
-            }
+        // EINGESCHRÄNKTE DREHUNGSGESCHWINDIGKEIT (SCHWERES LENKEN)
+        let diff = this.targetDir - this.dir;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        while (diff > Math.PI) diff -= Math.PI * 2;
 
-            init() {
-                if (!this.ctx) {
-                    const AudioContext = window.AudioContext || window.webkitAudioContext;
-                    this.ctx = new AudioContext();
-                }
-            }
+        // Begrenze die maximal erlaubte Drehung pro Frame
+        diff = Math.max(-MAX_TURN_SPEED, Math.min(MAX_TURN_SPEED, diff));
+        this.dir += diff;
 
-            playEatSound(foodValue) {
-                if (!this.ctx || this.sfxVolume <= 0) return;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
+        const head = this.segments[0];
+        head.position.x += Math.sin(this.dir) * SPEED;
+        head.position.z += Math.cos(this.dir) * SPEED;
+        head.rotation.y = this.dir;
 
-                // Pitch corresponds to food tier rarity
-                const baseFreq = 400 + foodValue * 25;
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(baseFreq, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, this.ctx.currentTime + 0.1);
-
-                gain.gain.setValueAtTime(0.2 * this.sfxVolume, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
-
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-
-                osc.start();
-                osc.stop(this.ctx.currentTime + 0.12);
-            }
-
-            playDeathSound() {
-                if (!this.ctx || this.sfxVolume <= 0) return;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(250, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.4);
-
-                gain.gain.setValueAtTime(0.4 * this.sfxVolume, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
-
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-
-                osc.start();
-                osc.stop(this.ctx.currentTime + 0.4);
-            }
-
-            playBoostSound() {
-                if (!this.ctx || this.sfxVolume <= 0) return;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(120, this.ctx.currentTime);
-                osc.frequency.linearRampToValueAtTime(220, this.ctx.currentTime + 0.15);
-
-                gain.gain.setValueAtTime(0.15 * this.sfxVolume, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
-
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-
-                osc.start();
-                osc.stop(this.ctx.currentTime + 0.15);
-            }
-        }
-
-        const audio = new SoundEngine();
-    </script>
-
-    <script>
-        // Game Constants & Configuration
-        const ARENA_RADIUS = 85;
-        const FOOD_COUNT = 260; // High density food spawning
-        const MAX_TURN_RATE = 0.042; // Turning limit (harder sluggish steering radius)
-        const SEGMENT_SPACING = 0.75; // Distance between worm segments
-        const SEGMENT_RADIUS = 0.6;
-
-        // Worm Skins Definitions
-        const SKINS = [
-            { name: "Neon Cyber", headColor: 0x3b82f6, bodyColor: 0x6366f1, hex: "#3b82f6" },
-            { name: "Emerald Dragon", headColor: 0x10b981, bodyColor: 0x059669, hex: "#10b981" },
-            { name: "Inferno Red", headColor: 0xef4444, bodyColor: 0xf97316, hex: "#ef4444" },
-            { name: "Royal Violet", headColor: 0xa855f7, bodyColor: 0x7c3aed, hex: "#a855f7" },
-            { name: "Golden Glow", headColor: 0xeab308, bodyColor: 0xf59e0b, hex: "#eab308" }
-        ];
-
-        // 5 Exact Food Rarity Tiers Definition
-        // 40% Grey (+1), 30% Green (+2), 15% Blue (+5), 10% Purple (+10), 5% Gold (+40)
-        const FOOD_TIERS = [
-            { name: "Grey", color: 0x888888, points: 1, radius: 0.35, prob: 0.40, hex: "#888888" },
-            { name: "Green", color: 0x22c55e, points: 2, radius: 0.48, prob: 0.30, hex: "#22c55e" },
-            { name: "Blue", color: 0x3b82f6, points: 5, radius: 0.62, prob: 0.15, hex: "#3b82f6" },
-            { name: "Purple", color: 0xa855f7, points: 10, radius: 0.80, prob: 0.10, hex: "#a855f7" },
-            { name: "Gold", color: 0xeab308, points: 40, radius: 1.15, prob: 0.05, hex: "#eab308" }
-        ];
-
-        // Global State Variables
-        let scene, camera, renderer;
-        let gameState = 'MENU'; // 'MENU', 'PLAYING', 'GAMEOVER'
-        let currentSkinIndex = 0;
-        let score = 0;
-        let wormLength = 12;
-        let isBoosting = false;
-        
-        // Steering Physics State
-        let headPosition = new THREE.Vector3(0, 0.6, 0);
-        let headAngle = 0; // Current moving angle
-        let targetAngle = 0; // Angle worm wants to pivot to
-        let currentSpeed = 0.28;
-
-        // Worm Mesh Objects & Physics Segments
-        let segmentPositions = [];
-        let segmentMeshes = [];
-        let wormGroup;
-        let headMesh;
-
-        // Food System Arrays
-        let foodList = [];
-        let foodGroup;
-
-        // Input Tracking State
-        let keys = {};
-        let touchStick = { active: false, x: 0, y: 0 };
-        let mousePos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-
-        function initThreeScene() {
-            const canvas = document.getElementById('game-canvas');
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x080c15);
-            scene.fog = new THREE.FogExp2(0x080c15, 0.012);
-
-            camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 300);
-            camera.position.set(0, 42, 30);
-            camera.lookAt(0, 0, 0);
-
-            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: "high-performance" });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-            // Lighting Setup
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
-
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
-            dirLight.position.set(40, 80, 40);
-            dirLight.castShadow = true;
-            dirLight.shadow.mapSize.width = 2048;
-            dirLight.shadow.mapSize.height = 2048;
-            dirLight.shadow.camera.near = 0.5;
-            dirLight.shadow.camera.far = 200;
-            dirLight.shadow.camera.left = -90;
-            dirLight.shadow.camera.right = 90;
-            dirLight.shadow.camera.top = 90;
-            dirLight.shadow.camera.bottom = -90;
-            scene.add(dirLight);
-
-            // Arena Ground Floor Grid
-            const gridGeo = new THREE.PlaneGeometry(ARENA_RADIUS * 2.2, ARENA_RADIUS * 2.2);
-            const gridMat = new THREE.MeshStandardMaterial({
-                color: 0x0f172a,
-                roughness: 0.8,
-                metalness: 0.2
-            });
-            const floor = new THREE.Mesh(gridGeo, gridMat);
-            floor.rotation.x = -Math.PI / 2;
-            floor.receiveShadow = true;
-            scene.add(floor);
-
-            // Ring Grid Pattern Helper
-            const gridHelper = new THREE.GridHelper(ARENA_RADIUS * 2.2, 80, 0x3b82f6, 0x1e293b);
-            gridHelper.position.y = 0.02;
-            scene.add(gridHelper);
-
-            // Outer Boundary Arena Wall Ring
-            const ringGeo = new THREE.RingGeometry(ARENA_RADIUS - 0.5, ARENA_RADIUS + 1.5, 128);
-            const ringMat = new THREE.MeshBasicMaterial({
-                color: 0x3b82f6,
-                side: THREE.DoubleSide,
-                transparent: true,
-                opacity: 0.8
-            });
-            const boundaryRing = new THREE.Mesh(ringGeo, ringMat);
-            boundaryRing.rotation.x = -Math.PI / 2;
-            boundaryRing.position.y = 0.05;
-            scene.add(boundaryRing);
-
-            // Outer Wall Glow Cylinder
-            const wallGeo = new THREE.CylinderGeometry(ARENA_RADIUS, ARENA_RADIUS, 12, 64, 1, true);
-            const wallMat = new THREE.MeshBasicMaterial({
-                color: 0x2563eb,
-                transparent: true,
-                opacity: 0.15,
-                side: THREE.BackSide
-            });
-            const boundaryWall = new THREE.Mesh(wallGeo, wallMat);
-            boundaryWall.position.y = 6;
-            scene.add(boundaryWall);
-
-            // Groups
-            wormGroup = new THREE.Group();
-            scene.add(wormGroup);
-
-            foodGroup = new THREE.Group();
-            scene.add(foodGroup);
-
-            // Window Resize listener
-            window.addEventListener('resize', onWindowResize);
-        }
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        // Helper: Sample random weighted food tier based on probabilities
-        function getRandomFoodTier() {
-            const rand = Math.random();
-            let cumulative = 0;
-            for (let tier of FOOD_TIERS) {
-                cumulative += tier.prob;
-                if (rand <= cumulative) {
-                    return tier;
-                }
-            }
-            return FOOD_TIERS[0];
-        }
-
-        // Spawn or Reset Food System
-        function initFoodSystem() {
-            // Clear existing
-            while(foodGroup.children.length > 0) {
-                const obj = foodGroup.children[0];
-                foodGroup.remove(obj);
-                if (obj.geometry) obj.geometry.dispose();
-            }
-            foodList = [];
-
-            // Spawn high density food items
-            for (let i = 0; i < FOOD_COUNT; i++) {
-                spawnSingleFood();
-            }
-        }
-
-        function spawnSingleFood() {
-            const tier = getRandomFoodTier();
-            
-            // Random position inside arena radius
-            const angle = Math.random() * Math.PI * 2;
-            const dist = Math.sqrt(Math.random()) * (ARENA_RADIUS - 4);
-            const x = Math.cos(angle) * dist;
-            const z = Math.sin(angle) * dist;
-
-            const geo = new THREE.SphereGeometry(tier.radius, 16, 16);
-            let mat;
-
-            if (tier.name === "Gold") {
-                mat = new THREE.MeshStandardMaterial({
-                    color: tier.color,
-                    emissive: 0xca8a04,
-                    emissiveIntensity: 0.8,
-                    roughness: 0.1,
-                    metalness: 0.9
-                });
-            } else {
-                mat = new THREE.MeshStandardMaterial({
-                    color: tier.color,
-                    emissive: tier.color,
-                    emissiveIntensity: 0.3,
-                    roughness: 0.3
-                });
-            }
-
-            const mesh = new THREE.Mesh(geo, mat);
-            mesh.position.set(x, tier.radius, z);
-            mesh.castShadow = true;
-
-            // Extra glow pointlight for Gold food
-            let light = null;
-            if (tier.name === "Gold") {
-                light = new THREE.PointLight(0xeab308, 1.2, 8);
-                light.position.set(0, 0, 0);
-                mesh.add(light);
-            }
-
-            foodGroup.add(mesh);
-
-            foodList.push({
-                mesh: mesh,
-                tier: tier,
-                initialY: tier.radius,
-                bobSeed: Math.random() * 10
-            });
+        // Spielfeld-Grenzprüfung
+        if (Math.abs(head.position.x) > ARENA_SIZE || Math.abs(head.position.z) > ARENA_SIZE) {
+          this.die();
+          return;
         }
 
-        function createWormMesh() {
-            // Clear previous worm meshes
-            while(wormGroup.children.length > 0) {
-                const child = wormGroup.children[0];
-                wormGroup.remove(child);
-                if (child.geometry) child.geometry.dispose();
-            }
-            segmentMeshes = [];
-            segmentPositions = [];
+        // KINEMATISCHE FOLGEBEWEGUNG
+        for (let i = 1; i < this.segments.length; i++) {
+          const prev = this.segments[i - 1];
+          const curr = this.segments[i];
 
-            const skin = SKINS[currentSkinIndex];
+          const dx = prev.position.x - curr.position.x;
+          const dz = prev.position.z - curr.position.z;
+          const dist = Math.hypot(dx, dz);
 
-            // Initialize head segment position
-            headPosition.set(0, SEGMENT_RADIUS, 0);
-            headAngle = 0;
-            targetAngle = 0;
-
-            // Create Head Mesh
-            const headGeo = new THREE.SphereGeometry(SEGMENT_RADIUS * 1.15, 24, 24);
-            const headMat = new THREE.MeshStandardMaterial({
-                color: skin.headColor,
-                roughness: 0.2,
-                metalness: 0.3
-            });
-            headMesh = new THREE.Mesh(headGeo, headMat);
-            headMesh.castShadow = true;
-            
-            // Add Snake Eyes to Head
-            const eyeGeo = new THREE.SphereGeometry(0.18, 12, 12);
-            const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-            const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-
-            const eyeLeft = new THREE.Mesh(eyeGeo, eyeMat);
-            eyeLeft.position.set(0.35, 0.25, 0.4);
-            const pupilLeft = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), pupilMat);
-            pupilLeft.position.set(0.05, 0, 0.12);
-            eyeLeft.add(pupilLeft);
-
-            const eyeRight = new THREE.Mesh(eyeGeo, eyeMat);
-            eyeRight.position.set(-0.35, 0.25, 0.4);
-            const pupilRight = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), pupilMat);
-            pupilRight.position.set(-0.05, 0, 0.12);
-            eyeRight.add(pupilRight);
-
-            headMesh.add(eyeLeft);
-            headMesh.add(eyeRight);
-            wormGroup.add(headMesh);
-
-            // Populate initial segment positions behind head
-            for (let i = 0; i < wormLength; i++) {
-                const pos = new THREE.Vector3(0, SEGMENT_RADIUS, -i * SEGMENT_SPACING);
-                segmentPositions.push(pos);
-
-                if (i > 0) {
-                    const scaleFactor = Math.max(0.4, 1 - (i / (wormLength * 2.5)));
-                    const segGeo = new THREE.SphereGeometry(SEGMENT_RADIUS * scaleFactor, 18, 18);
-                    const segMat = new THREE.MeshStandardMaterial({
-                        color: skin.bodyColor,
-                        roughness: 0.3,
-                        metalness: 0.2
-                    });
-                    const segMesh = new THREE.Mesh(segGeo, segMat);
-                    segMesh.position.copy(pos);
-                    segMesh.castShadow = true;
-                    wormGroup.add(segMesh);
-                    segmentMeshes.push(segMesh);
-                }
-            }
+          if (dist > 0.0001) {
+            const angle = Math.atan2(dx, dz);
+            curr.position.x = prev.position.x - Math.sin(angle) * SEGMENT_DISTANCE;
+            curr.position.z = prev.position.z - Math.cos(angle) * SEGMENT_DISTANCE;
+            curr.rotation.y = angle;
+          }
         }
 
-        // Add a body segment when worm grows
-        function growWorm(amount = 1) {
-            const skin = SKINS[currentSkinIndex];
-            for (let k = 0; k < amount; k++) {
-                const lastPos = segmentPositions[segmentPositions.length - 1].clone();
-                segmentPositions.push(lastPos);
-
-                const i = segmentPositions.length - 1;
-                const scaleFactor = Math.max(0.4, 1 - (i / (wormLength * 2.5)));
-                const segGeo = new THREE.SphereGeometry(SEGMENT_RADIUS * scaleFactor, 18, 18);
-                const segMat = new THREE.MeshStandardMaterial({
-                    color: skin.bodyColor,
-                    roughness: 0.3,
-                    metalness: 0.2
-                });
-                const segMesh = new THREE.Mesh(segGeo, segMat);
-                segMesh.position.copy(lastPos);
-                segMesh.castShadow = true;
-                wormGroup.add(segMesh);
-                segmentMeshes.push(segMesh);
-            }
-            wormLength = segmentPositions.length;
-            document.getElementById('hud-length').textContent = wormLength;
+        // SELBSTBERÜHRUNG (Kollision mit dem eigenen Körper ab Segment 5)
+        for (let i = 5; i < this.segments.length; i++) {
+          if (head.position.distanceTo(this.segments[i].position) < 0.52) {
+            this.die();
+            return;
+          }
         }
+      }
 
-        // Helper function for angle normalization
-        function normalizeAngle(angle) {
-            while (angle > Math.PI) angle -= Math.PI * 2;
-            while (angle < -Math.PI) angle += Math.PI * 2;
-            return angle;
-        }
+      die() {
+        if (this.isDead) return;
+        this.isDead = true;
 
-        function updateWormPhysics() {
-            if (gameState !== 'PLAYING') return;
-
-            // 1. Calculate Target Direction Angle based on controls
-            calculateTargetAngle();
-
-            // 2. Limit Steering Radius / Maximum Turn Rate (HARD TURNING REQUIREMENT)
-            // Worm cannot snap directly to target angle; it smoothly interpolates with max turn speed limit.
-            let angleDiff = normalizeAngle(targetAngle - headAngle);
-            if (Math.abs(angleDiff) > MAX_TURN_RATE) {
-                headAngle += Math.sign(angleDiff) * MAX_TURN_RATE;
-            } else {
-                headAngle = targetAngle;
-            }
-            headAngle = normalizeAngle(headAngle);
-
-            // 3. Forward Movement Step
-            const speed = isBoosting ? currentSpeed * 1.75 : currentSpeed;
-            headPosition.x += Math.cos(headAngle) * speed;
-            headPosition.z += Math.sin(headAngle) * speed;
-
-            // Update head mesh position and rotation
-            segmentPositions[0].copy(headPosition);
-            headMesh.position.copy(headPosition);
-            headMesh.rotation.y = -headAngle + Math.PI / 2;
-
-            // 4. Smooth Body Follow Physics Loop
-            for (let i = 1; i < segmentPositions.length; i++) {
-                const prev = segmentPositions[i - 1];
-                const curr = segmentPositions[i];
-                
-                const dist = curr.distanceTo(prev);
-                if (dist > SEGMENT_SPACING) {
-                    const dir = new THREE.Vector3().subVectors(prev, curr).normalize();
-                    curr.copy(prev).sub(dir.multiplyScalar(SEGMENT_SPACING));
-                }
-
-                if (i - 1 < segmentMeshes.length) {
-                    segmentMeshes[i - 1].position.copy(curr);
-                }
-            }
-
-            // 5. Camera Tracking
-            camera.position.x = headPosition.x;
-            camera.position.z = headPosition.z + parseFloat(document.getElementById('camera-distance-slider').value);
-            camera.position.y = parseFloat(document.getElementById('camera-distance-slider').value) * 0.9;
-            camera.lookAt(headPosition.x, 0, headPosition.z);
-
-            // 6. SELF-COLLISION DEATH CHECK (EXACT REQUIREMENT)
-            // Check collision between head and segments starting from index 5 to prevent head-neck self intersection
-            const headSphereRadius = SEGMENT_RADIUS * 1.1;
-            for (let i = 5; i < segmentPositions.length; i++) {
-                const dist = headPosition.distanceTo(segmentPositions[i]);
-                if (dist < headSphereRadius + SEGMENT_RADIUS * 0.65) {
-                    triggerGameOver("You collided with your own body!");
-                    return;
-                }
-            }
-
-            // 7. Arena Outer Boundary Collision Check
-            const distFromCenter = Math.sqrt(headPosition.x * headPosition.x + headPosition.z * headPosition.z);
-            if (distFromCenter > ARENA_RADIUS) {
-                triggerGameOver("You hit the outer boundary ring!");
-                return;
-            }
-
-            // 8. Food Consumption Collision Check
-            checkFoodCollisions();
-        }
-
-        // Calculate angle target from Joystick, Mouse, or Keyboard inputs
-        function calculateTargetAngle() {
-            // Touch Joystick Input
-            if (touchStick.active) {
-                targetAngle = Math.atan2(touchStick.y, touchStick.x);
-                return;
-            }
-
-            // Keyboard Controls (WASD / Arrows)
-            let dx = 0;
-            let dz = 0;
-            if (keys['KeyW'] || keys['ArrowUp']) dz -= 1;
-            if (keys['KeyS'] || keys['ArrowDown']) dz += 1;
-            if (keys['KeyA'] || keys['ArrowLeft']) dx -= 1;
-            if (keys['KeyD'] || keys['ArrowRight']) dx += 1;
-
-            if (dx !== 0 || dz !== 0) {
-                targetAngle = Math.atan2(dz, dx);
-                return;
-            }
-
-            // Mouse Direction Tracking (Desktop fallback)
-            const cx = window.innerWidth / 2;
-            const cy = window.innerHeight / 2;
-            const mdx = mousePos.x - cx;
-            const mdy = mousePos.y - cy;
-            if (Math.abs(mdx) > 10 || Math.abs(mdy) > 10) {
-                targetAngle = Math.atan2(mdy, mdx);
-            }
-        }
-
-        function checkFoodCollisions() {
-            for (let i = foodList.length - 1; i >= 0; i--) {
-                const food = foodList[i];
-                const dist = headPosition.distanceTo(food.mesh.position);
-
-                if (dist < (SEGMENT_RADIUS * 1.2 + food.tier.radius)) {
-                    // Consume food!
-                    score += food.tier.points;
-                    document.getElementById('hud-score').textContent = score;
-
-                    // Play audio effect
-                    audio.playEatSound(food.tier.points);
-
-                    // Grow worm proportionally
-                    growWorm(food.tier.points >= 10 ? 2 : 1);
-
-                    // Floating Score UI Popup
-                    showScorePopup(food.tier.points, food.tier.hex, food.mesh.position);
-
-                    // Remove mesh and respawn
-                    foodGroup.remove(food.mesh);
-                    if (food.mesh.geometry) food.mesh.geometry.dispose();
-                    foodList.splice(i, 1);
-
-                    // Respawn a new food item to maintain high density
-                    spawnSingleFood();
-                }
-            }
-        }
-
-        // Floating points animation over worm head
-        function showScorePopup(points, colorHex, pos3d) {
-            const tempV = pos3d.clone();
-            tempV.y += 1.5;
-            tempV.project(camera);
-
-            const x = (tempV.x *  .5 + .5) * window.innerWidth;
-            const y = (tempV.y * -.5 + .5) * window.innerHeight;
-
-            const popup = document.createElement('div');
-            popup.className = 'floating-score';
-            popup.style.left = `${x}px`;
-            popup.style.top = `${y}px`;
-            popup.style.color = colorHex;
-            popup.textContent = `+${points}`;
-            document.body.appendChild(popup);
-
-            setTimeout(() => {
-                if (popup && popup.parentNode) {
-                    popup.parentNode.removeChild(popup);
-                }
-            }, 800);
-        }
-
-        // Animated Food Float Loop
-        function animateFood(time) {
-            for (let food of foodList) {
-                food.mesh.position.y = food.initialY + Math.sin(time * 0.003 + food.bobSeed) * 0.2;
-                food.mesh.rotation.y += 0.015;
-            }
-        }
-
-        // Game Over Trigger
-        function triggerGameOver(reasonText) {
-            gameState = 'GAMEOVER';
-            audio.playDeathSound();
-
-            document.getElementById('death-reason').textContent = reasonText;
-            document.getElementById('final-score').textContent = score;
-            document.getElementById('final-length').textContent = wormLength;
-
-            // Hide HUD & Settings button during Game Over overlay
-            document.getElementById('in-game-hud').classList.add('hidden');
-            document.getElementById('game-over-modal').classList.remove('hidden');
-
-            // Save High Score to Firebase
-            const playerName = document.getElementById('player-name-input').value.trim() || 'WormPlayer';
-            if (window.saveHighScoreToFirebase) {
-                window.saveHighScoreToFirebase(playerName, score);
-            }
-        }
-
-        function startGame() {
-            score = 0;
-            wormLength = 10;
-            document.getElementById('hud-score').textContent = "0";
-            document.getElementById('hud-length').textContent = "10";
-
-            createWormMesh();
-            initFoodSystem();
-
-            gameState = 'PLAYING';
-
-            // Show HUD, Hide Menus
-            document.getElementById('main-menu').classList.add('hidden');
-            document.getElementById('game-over-modal').classList.add('hidden');
-            document.getElementById('in-game-hud').classList.remove('hidden');
-        }
-
-        function returnToMainMenu() {
-            gameState = 'MENU';
-            document.getElementById('game-over-modal').classList.add('hidden');
-            document.getElementById('in-game-hud').classList.add('hidden');
-            document.getElementById('main-menu').classList.remove('hidden');
-        }
-
-        function setupUIEventListeners() {
-            // Audio Init trigger on user interaction
-            document.body.addEventListener('pointerdown', () => audio.init(), { once: true });
-
-            // Skin Navigation
-            document.getElementById('prev-skin-btn').addEventListener('click', () => {
-                currentSkinIndex = (currentSkinIndex - 1 + SKINS.length) % SKINS.length;
-                updateSkinPreview();
-            });
-            document.getElementById('next-skin-btn').addEventListener('click', () => {
-                currentSkinIndex = (currentSkinIndex + 1) % SKINS.length;
-                updateSkinPreview();
-            });
-
-            function updateSkinPreview() {
-                const skin = SKINS[currentSkinIndex];
-                document.getElementById('skin-preview-name').textContent = skin.name;
-                document.getElementById('skin-preview-color').style.backgroundColor = skin.hex;
-            }
-            updateSkinPreview();
-
-            // Menu Buttons
-            document.getElementById('start-game-btn').addEventListener('click', startGame);
-            document.getElementById('restart-game-btn').addEventListener('click', startGame);
-            document.getElementById('return-menu-btn').addEventListener('click', returnToMainMenu);
-
-            // Settings Modal Listeners
-            const settingsModal = document.getElementById('settings-modal');
-
-            // Fixed Settings Icon inside HUD & Menu
-            document.getElementById('hud-settings-btn').addEventListener('click', () => {
-                settingsModal.classList.remove('hidden');
-            });
-            document.getElementById('open-settings-btn').addEventListener('click', () => {
-                settingsModal.classList.remove('hidden');
-            });
-            document.getElementById('close-settings-btn').addEventListener('click', () => {
-                settingsModal.classList.add('hidden');
-            });
-            document.getElementById('apply-settings-btn').addEventListener('click', () => {
-                settingsModal.classList.add('hidden');
-            });
-
-            // Volume Slider
-            const volSlider = document.getElementById('sfx-volume-slider');
-            volSlider.addEventListener('input', (e) => {
-                audio.sfxVolume = parseFloat(e.target.value);
-                document.getElementById('sfx-val-text').textContent = `${Math.round(audio.sfxVolume * 100)}%`;
-            });
-
-            // Leaderboard Modal
-            const lbModal = document.getElementById('leaderboard-modal');
-            document.getElementById('open-leaderboard-btn').addEventListener('click', () => {
-                lbModal.classList.remove('hidden');
-                loadLeaderboardData();
-            });
-            document.getElementById('close-leaderboard-btn').addEventListener('click', () => {
-                lbModal.classList.add('hidden');
-            });
-            document.getElementById('back-from-leaderboard-btn').addEventListener('click', () => {
-                lbModal.classList.add('hidden');
-            });
-
-            // Keyboard Listeners
-            window.addEventListener('keydown', (e) => {
-                keys[e.code] = true;
-                if (e.code === 'Space') {
-                    isBoosting = true;
-                }
-            });
-            window.addEventListener('keyup', (e) => {
-                keys[e.code] = false;
-                if (e.code === 'Space') {
-                    isBoosting = false;
-                }
-            });
-
-            // Mouse Movement for Direction
-            window.addEventListener('mousemove', (e) => {
-                mousePos.x = e.clientX;
-                mousePos.y = e.clientY;
-            });
-
-            // Touch Joystick Logic
-            const joystickZone = document.getElementById('joystick-zone');
-            const joystickStick = document.getElementById('joystick-stick');
-
-            joystickZone.addEventListener('touchstart', handleJoystickStart, { passive: false });
-            joystickZone.addEventListener('touchmove', handleJoystickMove, { passive: false });
-            joystickZone.addEventListener('touchend', handleJoystickEnd, { passive: false });
-
-            function handleJoystickStart(e) {
-                e.preventDefault();
-                touchStick.active = true;
-                updateJoystick(e.touches[0]);
-            }
-
-            function handleJoystickMove(e) {
-                e.preventDefault();
-                if (touchStick.active) {
-                    updateJoystick(e.touches[0]);
-                }
-            }
-
-            function handleJoystickEnd(e) {
-                e.preventDefault();
-                touchStick.active = false;
-                touchStick.x = 0;
-                touchStick.y = 0;
-                joystickStick.style.transform = `translate(-50%, -50%)`;
-            }
-
-            function updateJoystick(touch) {
-                const rect = joystickZone.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-
-                const dx = touch.clientX - centerX;
-                const dy = touch.clientY - centerY;
-                const maxLen = rect.width / 2;
-
-                const len = Math.sqrt(dx * dx + dy * dy);
-                const angle = Math.atan2(dy, dx);
-
-                const clampedLen = Math.min(len, maxLen);
-                const stickX = Math.cos(angle) * clampedLen;
-                const stickY = Math.sin(angle) * clampedLen;
-
-                joystickStick.style.transform = `translate(calc(-50% + ${stickX}px), calc(-50% + ${stickY}px))`;
-
-                touchStick.x = dx;
-                touchStick.y = dy;
-            }
-
-            // Mobile Boost Button
-            const boostBtn = document.getElementById('boost-btn');
-            boostBtn.addEventListener('touchstart', (e) => { e.preventDefault(); isBoosting = true; });
-            boostBtn.addEventListener('touchend', (e) => { e.preventDefault(); isBoosting = false; });
-            boostBtn.addEventListener('mousedown', () => { isBoosting = true; });
-            boostBtn.addEventListener('mouseup', () => { isBoosting = false; });
-        }
-
-        function loadLeaderboardData() {
-            const listEl = document.getElementById('leaderboard-list');
-            listEl.innerHTML = `<div class="text-center text-gray-400 py-6">Loading scores...</div>`;
-
-            if (window.subscribeLeaderboard) {
-                window.subscribeLeaderboard((scores) => {
-                    if (!scores || scores.length === 0) {
-                        listEl.innerHTML = `<div class="text-center text-gray-400 py-6">No high scores registered yet!</div>`;
-                        return;
-                    }
-
-                    listEl.innerHTML = scores.map((s, idx) => `
-                        <div class="flex items-center justify-between bg-slate-900/60 border border-white/10 p-3 rounded-2xl">
-                            <div class="flex items-center gap-3">
-                                <span class="w-7 h-7 rounded-xl ${idx === 0 ? 'bg-amber-500 text-slate-950 font-black' : idx === 1 ? 'bg-gray-300 text-slate-950 font-black' : idx === 2 ? 'bg-amber-700 text-white font-black' : 'bg-slate-800 text-gray-400 font-bold'} flex items-center justify-center text-xs">
-                                    ${idx + 1}
-                                </span>
-                                <span class="font-bold text-white">${s.name || 'Anonymous'}</span>
-                            </div>
-                            <span class="font-black text-amber-400 text-lg">${s.score || 0}</span>
-                        </div>
-                    `).join('');
-                });
-            }
-        }
-
-        function animate(time) {
-            requestAnimationFrame(animate);
-
-            // Update worm physics
-            updateWormPhysics();
-
-            // Animate floating food items
-            animateFood(time);
-
-            // Render 3D Scene
-            renderer.render(scene, camera);
-        }
-
-        // Initialize when DOM is completely loaded
-        window.addEventListener('DOMContentLoaded', () => {
-            initThreeScene();
-            createWormMesh();
-            initFoodSystem();
-            setupUIEventListeners();
-
-            // Start animation loop
-            animate(0);
+        this.segments.forEach(seg => {
+          spawnFood(seg.position.x, seg.position.z);
         });
-    </script>
+
+        scene.remove(this.meshGroup);
+
+        if (this.isPlayer) {
+          playHitSound();
+          onGameOver(this.score);
+        }
+      }
+    }
+
+    // SPANNING VON FUTTER MIT DEN 5 VARIANTEN
+    function spawnFood(x = null, z = null) {
+      const type = getRandomFoodType();
+      const foodGeo = new THREE.DodecahedronGeometry(type.scale);
+      const foodMat = new THREE.MeshStandardMaterial({
+        color: type.color,
+        roughness: 0.1,
+        emissive: type.color,
+        emissiveIntensity: 0.5
+      });
+      const mesh = new THREE.Mesh(foodGeo, foodMat);
+      mesh.castShadow = true;
+      mesh.userData = { points: type.points };
+
+      const px = x !== null ? x : (Math.random() - 0.5) * (ARENA_SIZE * 1.85);
+      const pz = z !== null ? z : (Math.random() - 0.5) * (ARENA_SIZE * 1.85);
+
+      mesh.position.set(px, type.scale, pz);
+      scene.add(mesh);
+      foods.push(mesh);
+    }
+
+    // JOYSTICK STEUERUNG
+    const joystickContainer = document.getElementById('joystick-container');
+    const joystickStick = document.getElementById('joystick-stick');
+
+    let touchActive = false;
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    window.addEventListener('pointerdown', (e) => {
+      if (!isPlaying) return;
+      if (e.clientY < 70 && e.clientX > window.innerWidth - 70) return;
+
+      initAudio();
+      touchActive = true;
+      touchStartX = e.clientX;
+      touchStartY = e.clientY;
+
+      joystickContainer.style.left = `${touchStartX}px`;
+      joystickContainer.style.top = `${touchStartY}px`;
+      joystickContainer.classList.remove('hidden');
+      joystickStick.style.transform = `translate(0px, 0px)`;
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!touchActive || !player || player.isDead) return;
+
+      const dx = e.clientX - touchStartX;
+      const dy = e.clientY - touchStartY;
+      const maxRadius = 40;
+      const dist = Math.min(maxRadius, Math.sqrt(dx * dx + dy * dy));
+
+      if (dist > 5) {
+        const angle = Math.atan2(dx, dy);
+        player.targetDir = angle;
+
+        const moveX = Math.sin(angle) * dist;
+        const moveY = Math.cos(angle) * dist;
+        joystickStick.style.transform = `translate(${moveX}px, ${moveY}px)`;
+      }
+    });
+
+    window.addEventListener('pointerup', () => {
+      touchActive = false;
+      joystickContainer.classList.add('hidden');
+    });
+
+    // GAME ANIMATION LOOP
+    function animate() {
+      if (!isPlaying) return;
+
+      animationFrameId = requestAnimationFrame(animate);
+
+      if (player && !player.isDead) {
+        player.update();
+
+        const head = player.segments[0];
+        camera.position.x = head.position.x;
+        camera.position.z = head.position.z + 14;
+        camera.lookAt(head.position.x, 0, head.position.z);
+
+        // Futter fressen
+        for (let i = foods.length - 1; i >= 0; i--) {
+          const f = foods[i];
+          if (head.position.distanceTo(f.position) < 0.8) {
+            const gainedPoints = f.userData.points || 1;
+            scene.remove(f);
+            foods.splice(i, 1);
+            player.score += gainedPoints;
+            playPopSound();
+
+            // Wachstum
+            if (player.score % 15 === 0 || gainedPoints >= 10) {
+              const tail = player.segments[player.segments.length - 1];
+              player.addSegment(tail.position.x, tail.position.z);
+            }
+
+            document.getElementById('score-val').textContent = player.score;
+            document.getElementById('length-val').textContent = player.segments.length;
+            
+            // Nachspawnen
+            for (let k = 0; k < 2; k++) spawnFood();
+          }
+        }
+
+        // Kollision mit Bots
+        bots.forEach(bot => {
+          if (bot.isDead) return;
+          for (let i = 0; i < bot.segments.length; i++) {
+            if (head.position.distanceTo(bot.segments[i].position) < 0.65) {
+              player.die();
+              break;
+            }
+          }
+          const botHead = bot.segments[0];
+          for (let i = 0; i < player.segments.length; i++) {
+            if (botHead.position.distanceTo(player.segments[i].position) < 0.65) {
+              bot.die();
+              break;
+            }
+          }
+        });
+      }
+
+      // Bots Update
+      bots.forEach(bot => {
+        if (bot.isDead) return;
+
+        if (Math.random() < 0.02) bot.targetDir += (Math.random() - 0.5) * 1.5;
+        const bHead = bot.segments[0];
+        if (Math.abs(bHead.position.x) > ARENA_SIZE - 3 || Math.abs(bHead.position.z) > ARENA_SIZE - 3) {
+          bot.targetDir = Math.atan2(-bHead.position.x, -bHead.position.z);
+        }
+
+        bot.update();
+
+        for (let i = foods.length - 1; i >= 0; i--) {
+          if (bHead.position.distanceTo(foods[i].position) < 0.8) {
+            scene.remove(foods[i]);
+            foods.splice(i, 1);
+            bot.score += foods[i].userData.points || 1;
+            if (bot.score % 20 === 0) {
+              const tail = bot.segments[bot.segments.length - 1];
+              bot.addSegment(tail.position.x, tail.position.z);
+            }
+            spawnFood();
+          }
+        }
+      });
+
+      bots = bots.filter(b => !b.isDead);
+      while (bots.length < 6) {
+        const bx = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
+        const bz = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
+        const color = BOT_COLORS[Math.floor(Math.random() * BOT_COLORS.length)];
+        bots.push(new Worm(false, color, bx, bz));
+      }
+
+      const time = Date.now() * 0.003;
+      foods.forEach((f, idx) => {
+        f.position.y = (f.geometry.parameters.radius || 0.25) + Math.sin(time + idx) * 0.06;
+        f.rotation.y += 0.02;
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    // SPIEL START & OVER
+    function startGame() {
+      const name = nameInput.value.trim() || 'WurmPlayer';
+      localStorage.setItem('worm_player_name', name);
+
+      if (player) scene.remove(player.meshGroup);
+      bots.forEach(b => scene.remove(b.meshGroup));
+      foods.forEach(f => scene.remove(f));
+
+      bots = [];
+      foods = [];
+
+      player = new Worm(true, 0x1982c4, 0, 0);
+
+      // DEUTLICH MEHR ESSEN SPANEN (250 Futterpunkte beim Start)
+      for (let i = 0; i < 250; i++) {
+        spawnFood();
+      }
+
+      for (let i = 0; i < 6; i++) {
+        const bx = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
+        const bz = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
+        const color = BOT_COLORS[Math.floor(Math.random() * BOT_COLORS.length)];
+        bots.push(new Worm(false, color, bx, bz));
+      }
+
+      document.getElementById('score-val').textContent = '0';
+      document.getElementById('length-val').textContent = player.segments.length;
+
+      document.getElementById('start-menu').classList.add('hidden');
+      document.getElementById('gameover-menu').classList.add('hidden');
+      document.getElementById('hud').classList.remove('hidden');
+
+      isPlaying = true;
+      animate();
+    }
+
+    function onGameOver(score) {
+      isPlaying = false;
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+      document.getElementById('hud').classList.add('hidden');
+      document.getElementById('final-score').textContent = Math.floor(score);
+      document.getElementById('gameover-menu').classList.remove('hidden');
+
+      const pName = nameInput.value.trim() || 'WurmPlayer';
+      saveScore(pName, score);
+    }
+
+    document.getElementById('start-btn').addEventListener('click', () => {
+      initAudio();
+      startGame();
+    });
+
+    document.getElementById('restart-btn').addEventListener('click', () => {
+      initAudio();
+      loadLeaderboard();
+      document.getElementById('gameover-menu').classList.add('hidden');
+      document.getElementById('start-menu').classList.remove('hidden');
+    });
+
+    initThree();
+    loadLeaderboard();
+  </script>
 </body>
 </html>
