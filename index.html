@@ -56,13 +56,13 @@
   <div id="hud" class="absolute top-4 left-4 flex justify-between items-center pointer-events-none hidden z-10">
     <div class="bg-slate-900/80 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-lg border border-cyan-500/30 text-white font-bold text-base md:text-lg flex items-center gap-3">
       <span>🌟 Punkte:</span> <span id="score-val" class="text-cyan-400 text-xl">0</span>
-      <span id="boost-indicator" class="hidden text-xs bg-amber-500/30 border border-amber-400 text-amber-300 px-2.5 py-0.5 rounded-full animate-pulse">2x BNS!</span>
+      <span id="boost-indicator" class="hidden text-xs bg-amber-500/30 border border-amber-400 text-amber-300 px-2.5 py-0.5 rounded-full animate-pulse">BOOST!</span>
     </div>
   </div>
 
   <!-- BOOST BUTTON -->
   <button id="boost-btn" class="absolute bottom-8 right-8 z-20 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-black px-6 py-4 rounded-3xl shadow-2xl border-2 border-amber-300 text-lg transition active:scale-95 flex items-center gap-2 hidden touch-none select-none">
-    ⚡ BOOST 2x
+    ⚡ BOOST
   </button>
 
   <!-- STARTMENÜ -->
@@ -103,7 +103,7 @@
     </div>
   </div>
 
-  <!-- SEPARATES SKIN MODAL -->
+  <!-- SKIN MODAL -->
   <div id="skin-modal" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-40 hidden">
     <div class="bg-slate-900 p-5 rounded-3xl border border-purple-500/40 max-w-lg w-full text-center shadow-2xl flex flex-col max-h-[90vh]">
       
@@ -191,6 +191,18 @@
           <span class="text-sm font-bold text-slate-300">🔊 Soundeffekte</span>
           <input type="checkbox" id="sound-toggle" checked class="w-5 h-5 accent-cyan-500">
         </div>
+
+        <!-- NEU: BOOST BUTTON POSITION -->
+        <div class="bg-slate-800 p-3 rounded-xl border border-slate-700">
+          <label for="boost-pos-select" class="block text-xs font-bold text-slate-300 mb-1.5">⚡ Boost-Button Position:</label>
+          <select id="boost-pos-select" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs font-bold text-cyan-300 focus:outline-none focus:border-cyan-400">
+            <option value="bottom-right">Unten Rechts (Standard)</option>
+            <option value="bottom-left">Unten Links</option>
+            <option value="top-right">Oben Rechts</option>
+            <option value="top-left">Oben Links</option>
+          </select>
+        </div>
+
         <button id="reset-scores-btn" class="w-full py-2.5 bg-rose-950/60 hover:bg-rose-900 border border-rose-800 text-rose-300 text-xs font-bold rounded-xl transition">
           Lokale Highscores löschen
         </button>
@@ -248,7 +260,7 @@
     }
 
     // ==========================================
-    // EINSTELLUNGEN LOGIK
+    // EINSTELLUNGEN LOGIK & BOOST POSITION
     // ==========================================
     let soundEnabled = true;
     const settingsBtn = document.getElementById('settings-btn');
@@ -257,9 +269,37 @@
     const soundToggle = document.getElementById('sound-toggle');
     const resetScoresBtn = document.getElementById('reset-scores-btn');
 
+    const boostBtn = document.getElementById('boost-btn');
+    const boostPosSelect = document.getElementById('boost-pos-select');
+
     settingsBtn.addEventListener('click', () => settingsModal.classList.remove('hidden'));
     closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
     soundToggle.addEventListener('change', (e) => soundEnabled = e.target.checked);
+
+    // Boost Button Position wechseln
+    function updateBoostPosition(pos) {
+      boostBtn.classList.remove('bottom-8', 'right-8', 'left-8', 'top-8', 'top-20');
+      
+      if (pos === 'bottom-left') {
+        boostBtn.classList.add('bottom-8', 'left-8');
+      } else if (pos === 'top-right') {
+        boostBtn.classList.add('top-20', 'right-8');
+      } else if (pos === 'top-left') {
+        boostBtn.classList.add('top-20', 'left-8');
+      } else {
+        // Default: bottom-right
+        boostBtn.classList.add('bottom-8', 'right-8');
+      }
+      localStorage.setItem('worm_boost_pos', pos);
+    }
+
+    boostPosSelect.addEventListener('change', (e) => updateBoostPosition(e.target.value));
+    
+    // Geladene Position anwenden
+    const savedBoostPos = localStorage.getItem('worm_boost_pos') || 'bottom-right';
+    boostPosSelect.value = savedBoostPos;
+    updateBoostPosition(savedBoostPos);
+
     resetScoresBtn.addEventListener('click', () => {
       if (confirm('Möchtest du die lokalen Highscores löschen?')) {
         localStorage.removeItem('worm_scores');
@@ -659,7 +699,9 @@
 
       scene = new THREE.Scene();
       scene.background = new THREE.Color("#4ade80");
-      scene.fog = new THREE.FogExp2(0x4ade80, 0.008);
+      
+      // NEBEL DEAKTIVIERT / ENTFERNT
+      scene.fog = null;
 
       camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 300);
       camera.position.set(0, 45, 0);
@@ -700,7 +742,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    // WURM KLASSE (LÄNGE BASIERT DYNAMISCH AUF DIE PUNKTE)
+    // WURM KLASSE
     class Worm {
       constructor(isPlayer = false, color = 0x1982c4, startX = 0, startZ = 0) {
         this.isPlayer = isPlayer;
@@ -754,7 +796,6 @@
           ));
         }
 
-        // Startsegmente
         for (let i = 0; i < 5; i++) {
           this.addSegment(
             startX - (i + 1) * SEGMENT_DISTANCE * Math.sin(this.dir), 
@@ -790,7 +831,6 @@
         this.meshGroup.remove(last);
       }
 
-      // Synchronisiert die Anzahl der Segmente direkt mit der Punktzahl
       syncSegmentsWithScore() {
         const targetSegments = Math.max(5, 5 + Math.floor(this.score / 5));
         while (this.segments.length < targetSegments) {
@@ -952,8 +992,7 @@
     window.addEventListener('pointerup', resetJoystick);
     window.addEventListener('pointercancel', resetJoystick);
 
-    // BOOST LOGIK (BASIERT DIREKT AUF DEN PUNKTEN)
-    const boostBtn = document.getElementById('boost-btn');
+    // BOOST LOGIK
     const boostIndicator = document.getElementById('boost-indicator');
 
     function startBoost() {
@@ -1024,13 +1063,11 @@
           if (player.score >= 10) {
             currentSpeed = BASE_SPEED * 1.8;
 
-            // Boost kostet Punkte & hinterlässt Futterspuren
+            // Boost verbraucht nur Punkte (KEIN FUTTERSPAWM MEHR HINTEN DROPPEN)
             const now = Date.now();
-            if (now - lastBoostSegmentDropTime > 500) {
+            if (now - lastBoostSegmentDropTime > 400) {
               lastBoostSegmentDropTime = now;
               player.score = Math.max(0, player.score - 2);
-              const tail = player.segments[player.segments.length - 1];
-              spawnFood(tail.position.x, tail.position.z);
               
               player.syncSegmentsWithScore();
               document.getElementById('score-val').textContent = player.score;
@@ -1044,9 +1081,8 @@
 
         const head = player.segments[0];
 
-        const baseHeight = 38;
-        const growthFactor = Math.min(player.segments.length * 0.5, 50);
-        const targetCamY = baseHeight + growthFactor;
+        // KAMERA HOCHSKALIERUNG ENTFERNT / BEGRENZT
+        const targetCamY = 42; 
 
         camera.position.x = head.position.x;
         camera.position.z = head.position.z;
@@ -1054,17 +1090,15 @@
 
         camera.lookAt(head.position.x, 0, head.position.z);
 
-        // Futter fressen
+        // Futter fressen (1x Multiplikator - Ganz normale Punkte)
         for (let i = foods.length - 1; i >= 0; i--) {
           const f = foods[i];
           if (head.position.distanceTo(f.position) < 0.8) {
             const rawPoints = f.userData.points || 1;
-            const multiplier = isBoosting ? 2 : 1;
-            const gainedPoints = rawPoints * multiplier;
 
             scene.remove(f);
             foods.splice(i, 1);
-            player.score += gainedPoints;
+            player.score += rawPoints;
             playPopSound();
 
             player.syncSegmentsWithScore();
@@ -1143,7 +1177,7 @@
 
       player = new Worm(true, 0x1982c4, 0, 0);
 
-      for (let i = 0; i < 820; i++) {
+      for (let i = 0; i < 420; i++) {
         spawnFood();
       }
 
