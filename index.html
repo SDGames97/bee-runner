@@ -53,13 +53,10 @@
     </div>
   </div>
 
-  <div id="hud" class="absolute top-4 left-4 right-20 flex justify-between items-center pointer-events-none hidden z-10">
-    <div class="bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-cyan-500/30 text-white font-bold text-base md:text-lg flex items-center gap-2">
-      <span>🌟 Punkte:</span> <span id="score-val" class="text-cyan-400">0</span>
-      <span id="boost-indicator" class="hidden text-xs bg-amber-500/30 border border-amber-400 text-amber-300 px-2 py-0.5 rounded-full animate-pulse">2x BNS!</span>
-    </div>
-    <div class="bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-amber-500/30 text-white font-bold text-xs md:text-sm">
-      🐍 Länge: <span id="length-val" class="text-amber-400">6</span>
+  <div id="hud" class="absolute top-4 left-4 flex justify-between items-center pointer-events-none hidden z-10">
+    <div class="bg-slate-900/80 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-lg border border-cyan-500/30 text-white font-bold text-base md:text-lg flex items-center gap-3">
+      <span>🌟 Punkte:</span> <span id="score-val" class="text-cyan-400 text-xl">0</span>
+      <span id="boost-indicator" class="hidden text-xs bg-amber-500/30 border border-amber-400 text-amber-300 px-2.5 py-0.5 rounded-full animate-pulse">2x BNS!</span>
     </div>
   </div>
 
@@ -610,18 +607,15 @@
 
     const BOT_COLORS = [0xff595e, 0x8ac926, 0x6a4c93, 0xffca3a, 0xff924c];
 
-    // HELLSCHWARZER BODEN (#1f1f1f) MIT WEISSEN LINIEN
     function createRugTexture() {
       const canvas = document.createElement('canvas');
       canvas.width = 512;
       canvas.height = 512;
       const ctx = canvas.getContext('2d');
 
-      // Boden in Hellschwarz #1f1f1f
       ctx.fillStyle = '#1f1f1f'; 
       ctx.fillRect(0, 0, 512, 512);
 
-      // Linien bleiben Weiß
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 8;
       ctx.lineCap = 'round';
@@ -706,7 +700,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    // WURM KLASSE
+    // WURM KLASSE (LÄNGE BASIERT DYNAMISCH AUF DIE PUNKTE)
     class Worm {
       constructor(isPlayer = false, color = 0x1982c4, startX = 0, startZ = 0) {
         this.isPlayer = isPlayer;
@@ -760,7 +754,8 @@
           ));
         }
 
-        for (let i = 0; i < 6; i++) {
+        // Startsegmente
+        for (let i = 0; i < 5; i++) {
           this.addSegment(
             startX - (i + 1) * SEGMENT_DISTANCE * Math.sin(this.dir), 
             startZ - (i + 1) * SEGMENT_DISTANCE * Math.cos(this.dir)
@@ -793,6 +788,18 @@
         if (this.segments.length <= 4) return;
         const last = this.segments.pop();
         this.meshGroup.remove(last);
+      }
+
+      // Synchronisiert die Anzahl der Segmente direkt mit der Punktzahl
+      syncSegmentsWithScore() {
+        const targetSegments = Math.max(5, 5 + Math.floor(this.score / 5));
+        while (this.segments.length < targetSegments) {
+          const tail = this.segments[this.segments.length - 1];
+          this.addSegment(tail.position.x, tail.position.z);
+        }
+        while (this.segments.length > targetSegments && this.segments.length > 5) {
+          this.removeLastSegment();
+        }
       }
 
       update(currentSpeed) {
@@ -890,7 +897,7 @@
       foods.push(mesh);
     }
 
-    // JOYSTICK STEUERUNG (MULTITOUCH ISOLIERT)
+    // JOYSTICK STEUERUNG
     const joystickContainer = document.getElementById('joystick-container');
     const joystickStick = document.getElementById('joystick-stick');
 
@@ -900,9 +907,8 @@
 
     window.addEventListener('pointerdown', (e) => {
       if (!isPlaying) return;
-      // Verhindere Joystick-Trigger auf Buttons
       if (e.target.closest('#boost-btn') || e.target.closest('#settings-btn')) return;
-      if (moveTouchId !== null) return; // Joystick bereits aktiv
+      if (moveTouchId !== null) return;
 
       initAudio();
       moveTouchId = e.pointerId;
@@ -946,12 +952,12 @@
     window.addEventListener('pointerup', resetJoystick);
     window.addEventListener('pointercancel', resetJoystick);
 
-    // BOOST LOGIK (ISOLIERT VOM JOYSTICK)
+    // BOOST LOGIK (BASIERT DIREKT AUF DEN PUNKTEN)
     const boostBtn = document.getElementById('boost-btn');
     const boostIndicator = document.getElementById('boost-indicator');
 
     function startBoost() {
-      if (player && player.segments.length > 4) {
+      if (player && player.score >= 10) {
         isBoosting = true;
         boostIndicator.classList.remove('hidden');
       }
@@ -962,7 +968,6 @@
       boostIndicator.classList.add('hidden');
     }
 
-    // Event-Isolation für den Boost-Button
     boostBtn.addEventListener('pointerdown', (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -981,7 +986,6 @@
       stopBoost();
     });
 
-    // Touch-Fallback für Mobile-Gleichzeitigkeit
     boostBtn.addEventListener('touchstart', (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -994,7 +998,6 @@
       stopBoost();
     }, { passive: false });
 
-    // Keyboard (Leertaste)
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Space' && isPlaying) {
         startBoost();
@@ -1018,16 +1021,19 @@
         let currentSpeed = BASE_SPEED;
         
         if (isBoosting) {
-          if (player.segments.length > 4) {
-            currentSpeed = BASE_SPEED * 1.8; 
+          if (player.score >= 10) {
+            currentSpeed = BASE_SPEED * 1.8;
 
+            // Boost kostet Punkte & hinterlässt Futterspuren
             const now = Date.now();
-            if (now - lastBoostSegmentDropTime > 1500) {
+            if (now - lastBoostSegmentDropTime > 500) {
               lastBoostSegmentDropTime = now;
+              player.score = Math.max(0, player.score - 2);
               const tail = player.segments[player.segments.length - 1];
               spawnFood(tail.position.x, tail.position.z);
-              player.removeLastSegment();
-              document.getElementById('length-val').textContent = player.segments.length;
+              
+              player.syncSegmentsWithScore();
+              document.getElementById('score-val').textContent = player.score;
             }
           } else {
             stopBoost();
@@ -1061,13 +1067,8 @@
             player.score += gainedPoints;
             playPopSound();
 
-            if (player.score % 15 === 0 || rawPoints >= 10) {
-              const tail = player.segments[player.segments.length - 1];
-              player.addSegment(tail.position.x, tail.position.z);
-            }
-
+            player.syncSegmentsWithScore();
             document.getElementById('score-val').textContent = player.score;
-            document.getElementById('length-val').textContent = player.segments.length;
             
             if (Math.random() < 0.7) spawnFood();
           }
@@ -1109,10 +1110,7 @@
             scene.remove(foods[i]);
             foods.splice(i, 1);
             bot.score += foods[i].userData.points || 1;
-            if (bot.score % 20 === 0) {
-              const tail = bot.segments[bot.segments.length - 1];
-              bot.addSegment(tail.position.x, tail.position.z);
-            }
+            bot.syncSegmentsWithScore();
             if (Math.random() < 0.7) spawnFood();
           }
         }
@@ -1157,7 +1155,6 @@
       }
 
       document.getElementById('score-val').textContent = '0';
-      document.getElementById('length-val').textContent = player.segments.length;
 
       document.getElementById('start-menu').classList.add('hidden');
       document.getElementById('gameover-menu').classList.add('hidden');
