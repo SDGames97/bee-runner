@@ -318,19 +318,19 @@
 
     const BOT_COLORS = [0xff595e, 0x8ac926, 0x6a4c93, 0xffca3a, 0xff924c];
 
-    // ERZEUGT DAS SMARAGDGRÜNE TEPPICH-MUSTER
+    // ERZEUGT DAS BRAUN-GRÜNE MUSTER FÜR DEN BODEN
     function createRugTexture() {
       const canvas = document.createElement('canvas');
       canvas.width = 512;
       canvas.height = 512;
       const ctx = canvas.getContext('2d');
 
-      // 1. Smaragdgrüner Hintergrund
-      ctx.fillStyle = '#064e3b';
+      // 1. Erdiges Braun als Hintergrund
+      ctx.fillStyle = '#5c3d11';
       ctx.fillRect(0, 0, 512, 512);
 
-      // 2. Weiße Linien & Bögen
-      ctx.strokeStyle = '#ffffff';
+      // 2. Hellgrüne Linien & Bögen
+      ctx.strokeStyle = '#4ade80';
       ctx.lineWidth = 8;
       ctx.lineCap = 'round';
 
@@ -375,9 +375,9 @@
       renderer.shadowMap.enabled = true;
 
       scene = new THREE.Scene();
-      // ÄNDERUNG: Dunkles Smaragdgrün für Hintergrund & Nebel
-      scene.background = new THREE.Color(#5c3d11);
-      scene.fog = new THREE.FogExp2(0x061412, 0.015);
+      // KORREKTUR: Hex-String mit Anführungszeichen
+      scene.background = new THREE.Color("#5c3d11");
+      scene.fog = new THREE.FogExp2(0x3d270b, 0.015);
 
       camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
       camera.position.set(0, 18, 14);
@@ -391,7 +391,7 @@
       dirLight.castShadow = true;
       scene.add(dirLight);
 
-      // ÄNDERUNG: Boden mit Teppich-Textur
+      // Boden mit neuer Textur
       const groundGeo = new THREE.PlaneGeometry(ARENA_SIZE * 2, ARENA_SIZE * 2);
       const groundMat = new THREE.MeshStandardMaterial({ 
         map: createRugTexture(), 
@@ -613,21 +613,18 @@
 
         const head = player.segments[0];
 
-// Berechnet den Kameraschub basierend auf der Segment-Anzahl (Länge des Wurms)
-const baseDistance = 14;
-const baseHeight = 18;
-const growthFactor = Math.min(player.segments.length * 0.25, 25); // Maximal +25 Abstand
+        const baseDistance = 14;
+        const baseHeight = 18;
+        const growthFactor = Math.min(player.segments.length * 0.25, 25);
 
-// Reibungslose Annäherung der Kamera
-const targetCamZ = head.position.z + baseDistance + growthFactor;
-const targetCamY = baseHeight + (growthFactor * 0.8);
+        const targetCamZ = head.position.z + baseDistance + growthFactor;
+        const targetCamY = baseHeight + (growthFactor * 0.8);
 
-camera.position.x = head.position.x;
-camera.position.y += (targetCamY - camera.position.y) * 0.05; // Weicher Übergang
-camera.position.z += (targetCamZ - camera.position.z) * 0.05; // Weicher Übergang
+        camera.position.x = head.position.x;
+        camera.position.y += (targetCamY - camera.position.y) * 0.05;
+        camera.position.z += (targetCamZ - camera.position.z) * 0.05;
 
-camera.lookAt(head.position.x, 0, head.position.z);
-
+        camera.lookAt(head.position.x, 0, head.position.z);
 
         // Futter fressen
         for (let i = foods.length - 1; i >= 0; i--) {
@@ -703,8 +700,6 @@ camera.lookAt(head.position.x, 0, head.position.z);
         const color = BOT_COLORS[Math.floor(Math.random() * BOT_COLORS.length)];
         bots.push(new Worm(false, color, bx, bz));
       }
-
-      // HIER WURDE DIE ANIMATION DES FUTTERS ENTFERNT, DAMIT ES STARR BLEIBT!
 
       renderer.render(scene, camera);
     }
