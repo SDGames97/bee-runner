@@ -25,7 +25,6 @@
       height: 100%;
       display: block;
     }
-    /* Custom Scrollbar for Segment Customizer */
     .custom-scroll::-webkit-scrollbar {
       height: 6px;
       width: 6px;
@@ -55,38 +54,102 @@
   </div>
 
   <div id="hud" class="absolute top-4 left-4 right-20 flex justify-between items-center pointer-events-none hidden z-10">
-    <div class="bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-cyan-500/30 text-white font-bold text-base md:text-lg">
-      🌟 Punkte: <span id="score-val" class="text-cyan-400">0</span>
+    <div class="bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-cyan-500/30 text-white font-bold text-base md:text-lg flex items-center gap-2">
+      <span>🌟 Punkte:</span> <span id="score-val" class="text-cyan-400">0</span>
+      <span id="boost-indicator" class="hidden text-xs bg-amber-500/30 border border-amber-400 text-amber-300 px-2 py-0.5 rounded-full animate-pulse">2x BNS!</span>
     </div>
     <div class="bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-amber-500/30 text-white font-bold text-xs md:text-sm">
       🐍 Länge: <span id="length-val" class="text-amber-400">6</span>
     </div>
   </div>
 
-  <!-- START & SKIN EDITOR MENU -->
-  <div id="start-menu" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-20">
-    <div class="bg-slate-900/95 p-5 rounded-3xl shadow-2xl border border-cyan-500/30 max-w-lg w-full text-center relative overflow-hidden max-h-[95vh] flex flex-col">
-      
-      <h1 class="text-3xl font-black text-cyan-400 drop-shadow-[0_2px_10px_rgba(34,211,238,0.8)] tracking-wide mb-1">🐛 WORMRING</h1>
-      <p class="text-slate-400 text-xs mb-3">Erstelle deinen eigenen Wurm &amp; spiele in Vogelperspektive!</p>
+  <!-- BOOST BUTTON -->
+  <button id="boost-btn" class="absolute bottom-8 right-8 z-10 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-black px-6 py-4 rounded-3xl shadow-2xl border-2 border-amber-300 text-lg transition active:scale-95 flex items-center gap-2 hidden touch-none">
+    ⚡ BOOST 2x
+  </button>
 
-      <div class="overflow-y-auto pr-1 space-y-4 text-left custom-scroll mb-3">
-        
-        <!-- Spielername -->
-        <div>
+  <!-- STARTMENÜ -->
+  <div id="start-menu" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-20">
+    <div class="bg-slate-900/95 p-6 rounded-3xl shadow-2xl border border-cyan-500/30 max-w-md w-full text-center relative overflow-hidden flex flex-col justify-between">
+      
+      <div>
+        <h1 class="text-4xl font-black text-cyan-400 drop-shadow-[0_2px_10px_rgba(34,211,238,0.8)] tracking-wide mb-1">🐛 WORMRING</h1>
+        <p class="text-slate-400 text-xs mb-5">Vogelperspektive Edition – Passe deinen Wurm im Skin-Menü an!</p>
+
+        <div class="mb-4 text-left">
           <label for="player-name" class="block text-xs font-bold text-cyan-300 uppercase mb-1">Dein Spielername</label>
-          <input type="text" id="player-name" placeholder="SpaceWorm" maxlength="15" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-400 text-white font-bold text-sm transition">
+          <input type="text" id="player-name" placeholder="SpaceWorm" maxlength="15" class="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-400 text-white font-bold text-base transition">
         </div>
 
-        <!-- SKIN EDITOR BEREICH -->
-        <div class="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/80">
-          <div class="flex justify-between items-center mb-2">
-            <h2 class="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-1">🎨 Skin &amp; Segmente Designer (20 Segmente)</h2>
-          </div>
+        <button id="start-btn" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 active:scale-95 text-white font-black text-lg rounded-2xl shadow-lg shadow-cyan-500/25 transition duration-150 mb-3">
+          SPIEL STARTEN ▶
+        </button>
 
-          <!-- Schnellauswahl Generatoren -->
+        <div class="flex justify-start mb-4">
+          <button id="open-skin-btn" class="py-2.5 px-5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black rounded-xl border border-purple-400/30 shadow-md transition active:scale-95 flex items-center gap-2">
+            🎨 SKINS
+          </button>
+        </div>
+      </div>
+
+      <div class="border-t border-slate-800 pt-3 text-left">
+        <div class="flex justify-between items-center mb-2">
+          <h2 class="text-xs font-bold text-slate-400 uppercase flex items-center gap-1">🏆 Top Highscores</h2>
+          <span id="lb-status" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold">Online</span>
+        </div>
+        <div class="bg-slate-800/50 rounded-2xl p-2.5 border border-slate-800 max-h-28 overflow-y-auto custom-scroll">
+          <ol id="leaderboard-list" class="text-xs font-semibold text-slate-300 divide-y divide-slate-800/50">
+            <li class="py-2 text-center text-slate-500 italic">Lade Bestenliste...</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEPARATES SKIN MODAL -->
+  <div id="skin-modal" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-40 hidden">
+    <div class="bg-slate-900 p-5 rounded-3xl border border-purple-500/40 max-w-lg w-full text-center shadow-2xl flex flex-col max-h-[90vh]">
+      
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-2xl font-black text-purple-400 flex items-center gap-2">🎨 Skin Menü</h2>
+        <button id="close-skin-btn" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white font-bold flex items-center justify-center">✕</button>
+      </div>
+
+      <div class="flex gap-2 mb-3 border-b border-slate-800 pb-2">
+        <button id="tab-presets-btn" class="flex-1 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 active:bg-purple-600 active:text-white transition">Voreingestellte Skins</button>
+        <button id="tab-custom-btn" class="flex-1 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white transition">Eigene Haut</button>
+      </div>
+
+      <div id="tab-presets-content" class="hidden overflow-y-auto pr-1 space-y-2 text-left custom-scroll mb-3 max-h-[55vh]">
+        <div class="grid grid-cols-2 gap-2">
+          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left" data-colors="#06b6d4,#3b82f6" data-pattern="none">
+            <span class="block text-xs font-bold text-cyan-400 mb-1">Cyber Neon</span>
+            <div class="h-3 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500"></div>
+          </button>
+          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left" data-colors="#ef4444,#f97316,#eab308" data-pattern="triangle">
+            <span class="block text-xs font-bold text-amber-400 mb-1">Feuerdrache</span>
+            <div class="h-3 rounded-full bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500"></div>
+          </button>
+          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left" data-colors="#22c55e,#10b981" data-pattern="circle">
+            <span class="block text-xs font-bold text-emerald-400 mb-1">Waldmeister</span>
+            <div class="h-3 rounded-full bg-gradient-to-r from-green-500 to-emerald-400"></div>
+          </button>
+          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left" data-colors="#a855f7,#ec4899" data-pattern="trapezoid">
+            <span class="block text-xs font-bold text-pink-400 mb-1">Glow Worm</span>
+            <div class="h-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"></div>
+          </button>
+          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left col-span-2" data-rainbow="true" data-pattern="stripes">
+            <span class="block text-xs font-bold text-yellow-300 mb-1">Regenbogen Express</span>
+            <div class="h-3 rounded-full bg-gradient-to-r from-red-500 via-green-500 via-blue-500 to-purple-500"></div>
+          </button>
+        </div>
+      </div>
+
+      <div id="tab-custom-content" class="overflow-y-auto pr-1 space-y-3 text-left custom-scroll mb-3 max-h-[55vh]">
+        <div class="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/80">
+          
           <div class="mb-3">
-            <span class="text-[11px] text-slate-400 font-bold block mb-1">Farbverlauf-Generatoren:</span>
+            <span class="text-[11px] text-slate-400 font-bold block mb-1">Schnell-Muster:</span>
             <div class="grid grid-cols-4 gap-1.5">
               <button id="preset-stripes" class="py-1 bg-slate-700 hover:bg-slate-600 text-[10px] font-bold rounded-lg border border-slate-600">Abwechselnd</button>
               <button id="preset-rainbow" class="py-1 bg-gradient-to-r from-red-500 via-green-500 to-blue-500 text-[10px] font-bold rounded-lg text-white">Regenbogen</button>
@@ -95,9 +158,8 @@
             </div>
           </div>
 
-          <!-- Geometrisches Muster Overlay -->
           <div class="mb-3">
-            <label for="pattern-select" class="text-[11px] text-slate-400 font-bold block mb-1">Geometrisches Form-Muster:</label>
+            <label for="pattern-select" class="text-[11px] text-slate-400 font-bold block mb-1">Form-Muster auf den Segmenten:</label>
             <select id="pattern-select" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-bold text-cyan-300 focus:outline-none focus:border-cyan-400">
               <option value="none">Kein Muster (Einfarbig)</option>
               <option value="circle">⭕ Kreise</option>
@@ -108,36 +170,21 @@
             </select>
           </div>
 
-          <!-- 20 Segment Farbwähler -->
           <div>
-            <span class="text-[11px] text-slate-400 font-bold block mb-1.5">Einzelne Segmentfarben (1 bis 20):</span>
+            <span class="text-[11px] text-slate-400 font-bold block mb-1.5">Eigene Haut zusammenstellen (20 Segmente):</span>
             <div id="segment-pickers" class="flex gap-1.5 overflow-x-auto pb-2 custom-scroll">
-              <!-- Dynamisch per JS befüllt -->
             </div>
           </div>
         </div>
-
       </div>
 
-      <button id="start-btn" class="w-full py-3 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 active:scale-95 text-white font-black text-lg rounded-2xl shadow-lg shadow-cyan-500/25 transition duration-150 mb-3">
-        SPIEL STARTEN ▶
+      <button id="save-skin-btn" class="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm rounded-xl transition shadow-lg">
+        Skin Übernehmen &amp; Schließen
       </button>
-
-      <div class="border-t border-slate-800 pt-2 text-left">
-        <div class="flex justify-between items-center mb-1">
-          <h2 class="text-xs font-bold text-slate-400 uppercase flex items-center gap-1">🏆 Top Highscores</h2>
-          <span id="lb-status" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold">Online</span>
-        </div>
-        <div class="bg-slate-800/50 rounded-xl p-2 border border-slate-800 max-h-24 overflow-y-auto custom-scroll">
-          <ol id="leaderboard-list" class="text-xs font-semibold text-slate-300 divide-y divide-slate-800/50">
-            <li class="py-1 text-center text-slate-500 italic">Lade Bestenliste...</li>
-          </ol>
-        </div>
-      </div>
     </div>
   </div>
 
-  <!-- SETTINGS MODAL -->
+  <!-- EINSTELLUNGEN MODAL -->
   <div id="settings-modal" class="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
     <div class="bg-slate-900 p-6 rounded-3xl border border-slate-700 max-w-xs w-full text-center shadow-2xl">
       <h2 class="text-2xl font-black text-cyan-400 mb-4">Einstellungen</h2>
@@ -225,16 +272,43 @@
     });
 
     // ==========================================
-    // SKIN & MUSTER DESIGNER LOGIK (20 SEGMENTE)
+    // SKIN MENÜ LOGIK (SEPARAT)
     // ==========================================
     const NUM_CUSTOM_SEGMENTS = 20;
     let playerSegmentColors = Array(NUM_CUSTOM_SEGMENTS).fill('#1982c4');
     let selectedPattern = 'none';
 
-    // Standardfarben initialisieren
     for(let i = 0; i < NUM_CUSTOM_SEGMENTS; i++) {
       playerSegmentColors[i] = (i % 2 === 0) ? '#06b6d4' : '#10b981';
     }
+
+    const skinModal = document.getElementById('skin-modal');
+    const openSkinBtn = document.getElementById('open-skin-btn');
+    const closeSkinBtn = document.getElementById('close-skin-btn');
+    const saveSkinBtn = document.getElementById('save-skin-btn');
+
+    const tabPresetsBtn = document.getElementById('tab-presets-btn');
+    const tabCustomBtn = document.getElementById('tab-custom-btn');
+    const tabPresetsContent = document.getElementById('tab-presets-content');
+    const tabCustomContent = document.getElementById('tab-custom-content');
+
+    openSkinBtn.addEventListener('click', () => skinModal.classList.remove('hidden'));
+    closeSkinBtn.addEventListener('click', () => skinModal.classList.add('hidden'));
+    saveSkinBtn.addEventListener('click', () => skinModal.classList.add('hidden'));
+
+    tabPresetsBtn.addEventListener('click', () => {
+      tabPresetsContent.classList.remove('hidden');
+      tabCustomContent.classList.add('hidden');
+      tabPresetsBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white transition";
+      tabCustomBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 active:bg-purple-600 active:text-white transition";
+    });
+
+    tabCustomBtn.addEventListener('click', () => {
+      tabCustomContent.classList.remove('hidden');
+      tabPresetsContent.classList.add('hidden');
+      tabCustomBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white transition";
+      tabPresetsBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 active:bg-purple-600 active:text-white transition";
+    });
 
     const segmentPickersContainer = document.getElementById('segment-pickers');
     const patternSelect = document.getElementById('pattern-select');
@@ -263,7 +337,30 @@
       });
     }
 
-    // Muster Generatoren Buttons
+    document.querySelectorAll('.preset-skin-card').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const colors = btn.dataset.colors ? btn.dataset.colors.split(',') : null;
+        const pattern = btn.dataset.pattern || 'none';
+        const isRainbow = btn.dataset.rainbow === 'true';
+
+        selectedPattern = pattern;
+        patternSelect.value = pattern;
+
+        if (isRainbow) {
+          for(let i = 0; i < NUM_CUSTOM_SEGMENTS; i++) {
+            const hue = (i / NUM_CUSTOM_SEGMENTS) * 360;
+            playerSegmentColors[i] = `hsl(${hue}, 90%, 55%)`;
+          }
+        } else if (colors) {
+          for(let i = 0; i < NUM_CUSTOM_SEGMENTS; i++) {
+            playerSegmentColors[i] = colors[i % colors.length];
+          }
+        }
+        renderSegmentPickers();
+        alert('Skin ausgewählt!');
+      });
+    });
+
     document.getElementById('preset-stripes').addEventListener('click', () => {
       for(let i = 0; i < NUM_CUSTOM_SEGMENTS; i++) {
         playerSegmentColors[i] = (i % 2 === 0) ? '#06b6d4' : '#3b82f6';
@@ -304,7 +401,7 @@
     renderSegmentPickers();
 
     // ==========================================
-    // TEXTURE DYNAMISCHER MUSTER-GENERATOR
+    // TEXTURE GENERATOR
     // ==========================================
     const textureCache = {};
 
@@ -317,7 +414,6 @@
       canvas.height = 256;
       const ctx = canvas.getContext('2d');
 
-      // Basis-Farbe
       ctx.fillStyle = baseColorHex;
       ctx.fillRect(0, 0, 256, 256);
 
@@ -500,7 +596,7 @@
     let isPlaying = false;
     let animationFrameId = null;
 
-    const SPEED = 0.085; 
+    const BASE_SPEED = 0.085; 
     const SEGMENT_DISTANCE = 0.42;
     const MAX_TURN_SPEED = 0.07;
     const ARENA_SIZE = 80;
@@ -509,16 +605,18 @@
     let bots = [];
     let foods = [];
 
+    let isBoosting = false;
+    let lastBoostSegmentDropTime = 0;
+
     const BOT_COLORS = [0xff595e, 0x8ac926, 0x6a4c93, 0xffca3a, 0xff924c];
 
-    // HELLBRAUNER BODEN MIT WEISSEN LINIEN
     function createRugTexture() {
       const canvas = document.createElement('canvas');
       canvas.width = 512;
       canvas.height = 512;
       const ctx = canvas.getContext('2d');
 
-      ctx.fillStyle = '#d2b48c'; 
+      ctx.fillStyle = '#404040'; 
       ctx.fillRect(0, 0, 512, 512);
 
       ctx.strokeStyle = '#ffffff';
@@ -566,7 +664,6 @@
       scene.background = new THREE.Color("#4ade80");
       scene.fog = new THREE.FogExp2(0x4ade80, 0.008);
 
-      // KAMERA VOGELPERSPEKTIVE (Direkt von oben)
       camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 300);
       camera.position.set(0, 45, 0);
       camera.lookAt(0, 0, 0);
@@ -579,7 +676,6 @@
       dirLight.castShadow = true;
       scene.add(dirLight);
 
-      // Spielfeld
       const groundGeo = new THREE.PlaneGeometry(ARENA_SIZE * 2, ARENA_SIZE * 2);
       const groundMat = new THREE.MeshStandardMaterial({ 
         map: createRugTexture(), 
@@ -590,7 +686,6 @@
       ground.receiveShadow = true;
       scene.add(ground);
 
-      // Grüne Umgebung
       const outerGroundGeo = new THREE.PlaneGeometry(ARENA_SIZE * 10, ARENA_SIZE * 10);
       const outerGroundMat = new THREE.MeshBasicMaterial({ color: 0x4ade80 });
       const outerGround = new THREE.Mesh(outerGroundGeo, outerGroundMat);
@@ -608,7 +703,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    // WURM KLASSE MEHRFARBIG & FORTLAUFENDE SEGMENTE
+    // WURM KLASSE
     class Worm {
       constructor(isPlayer = false, color = 0x1982c4, startX = 0, startZ = 0) {
         this.isPlayer = isPlayer;
@@ -619,10 +714,10 @@
         this.isDead = false;
 
         this.segments = [];
+        this.pathHistory = [];
         this.meshGroup = new THREE.Group();
         scene.add(this.meshGroup);
 
-        // Kopf-Material
         const headColorHex = isPlayer ? playerSegmentColors[0] : color;
         const headMat = isPlayer 
           ? new THREE.MeshStandardMaterial({ map: createSegmentTexture(headColorHex, selectedPattern), roughness: 0.3 })
@@ -654,7 +749,14 @@
         pupilRight.position.set(0, 0, 0.08);
         eyeRight.add(pupilRight);
 
-        // Start-Segmente
+        for (let i = 0; i < 500; i++) {
+          this.pathHistory.push(new THREE.Vector3(
+            startX - i * 0.05 * Math.sin(this.dir),
+            0.5,
+            startZ - i * 0.05 * Math.cos(this.dir)
+          ));
+        }
+
         for (let i = 0; i < 6; i++) {
           this.addSegment(
             startX - (i + 1) * SEGMENT_DISTANCE * Math.sin(this.dir), 
@@ -664,12 +766,11 @@
       }
 
       addSegment(x, z) {
-        const scale = 0.46; // KONSTANTE GRÖSSE
+        const scale = 0.46; 
         const segIdx = this.segments.length;
 
         let bodyMat;
         if (this.isPlayer) {
-          // Fortlaufendes Wiederholen der 20 ausgewählten Farben
           const colorHex = playerSegmentColors[(segIdx - 1) % NUM_CUSTOM_SEGMENTS];
           const texture = createSegmentTexture(colorHex, selectedPattern);
           bodyMat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.3 });
@@ -685,7 +786,13 @@
         this.segments.push(mesh);
       }
 
-      update() {
+      removeLastSegment() {
+        if (this.segments.length <= 4) return;
+        const last = this.segments.pop();
+        this.meshGroup.remove(last);
+      }
+
+      update(currentSpeed) {
         if (this.isDead) return;
 
         let diff = this.targetDir - this.dir;
@@ -696,32 +803,45 @@
         this.dir += diff;
 
         const head = this.segments[0];
-        head.position.x += Math.sin(this.dir) * SPEED;
-        head.position.z += Math.cos(this.dir) * SPEED;
+        head.position.x += Math.sin(this.dir) * currentSpeed;
+        head.position.z += Math.cos(this.dir) * currentSpeed;
         head.rotation.y = this.dir;
+
+        this.pathHistory.unshift(head.position.clone());
 
         if (Math.abs(head.position.x) > ARENA_SIZE || Math.abs(head.position.z) > ARENA_SIZE) {
           this.die();
           return;
         }
 
+        let accumulatedDistance = 0;
+        let historyIdx = 0;
+
         for (let i = 1; i < this.segments.length; i++) {
-          const prev = this.segments[i - 1];
-          const curr = this.segments[i];
+          const targetDistance = i * SEGMENT_DISTANCE;
 
-          const dx = prev.position.x - curr.position.x;
-          const dz = prev.position.z - curr.position.z;
-          const dist = Math.hypot(dx, dz);
+          while (historyIdx < this.pathHistory.length - 1 && accumulatedDistance < targetDistance) {
+            const p1 = this.pathHistory[historyIdx];
+            const p2 = this.pathHistory[historyIdx + 1];
+            const dist = p1.distanceTo(p2);
 
-          if (dist > 0.0001) {
-            const angle = Math.atan2(dx, dz);
-            curr.position.x = prev.position.x - Math.sin(angle) * SEGMENT_DISTANCE;
-            curr.position.z = prev.position.z - Math.cos(angle) * SEGMENT_DISTANCE;
-            curr.rotation.y = angle;
+            if (accumulatedDistance + dist >= targetDistance) {
+              const alpha = (targetDistance - accumulatedDistance) / dist;
+              this.segments[i].position.lerpVectors(p1, p2, alpha);
+              break;
+            }
+
+            accumulatedDistance += dist;
+            historyIdx++;
           }
         }
 
-        for (let i = 5; i < this.segments.length; i++) {
+        const maxHistoryNeeded = Math.ceil((this.segments.length * SEGMENT_DISTANCE) / currentSpeed) + 50;
+        if (this.pathHistory.length > maxHistoryNeeded) {
+          this.pathHistory.length = maxHistoryNeeded;
+        }
+
+        for (let i = 8; i < this.segments.length; i++) {
           if (head.position.distanceTo(this.segments[i].position) < 0.52) {
             this.die();
             return;
@@ -777,7 +897,7 @@
 
     window.addEventListener('pointerdown', (e) => {
       if (!isPlaying) return;
-      if (e.clientY < 70 && e.clientX > window.innerWidth - 70) return;
+      if (e.target.closest('#boost-btn') || e.target.closest('#settings-btn')) return;
 
       initAudio();
       touchActive = true;
@@ -816,6 +936,41 @@
       }
     });
 
+    // BOOST LOGIK (HOLD & KEYBOARD LEERTASTE)
+    const boostBtn = document.getElementById('boost-btn');
+    const boostIndicator = document.getElementById('boost-indicator');
+
+    function startBoost() {
+      if (player && player.segments.length > 4) {
+        isBoosting = true;
+        boostIndicator.classList.remove('hidden');
+      }
+    }
+
+    function stopBoost() {
+      isBoosting = false;
+      boostIndicator.classList.add('hidden');
+    }
+
+    boostBtn.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      startBoost();
+    });
+
+    window.addEventListener('pointerup', () => stopBoost());
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && isPlaying) {
+        startBoost();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'Space') {
+        stopBoost();
+      }
+    });
+
     // GAME ANIMATION LOOP
     function animate() {
       if (!isPlaying) return;
@@ -823,11 +978,32 @@
       animationFrameId = requestAnimationFrame(animate);
 
       if (player && !player.isDead) {
-        player.update();
+        
+        // BOOST VERHALTEN & BALANCING
+        let currentSpeed = BASE_SPEED;
+        
+        if (isBoosting) {
+          if (player.segments.length > 4) {
+            currentSpeed = BASE_SPEED * 1.8; // 1.8-fache Geschwindigkeit
+
+            // Kosten: Wurm verliert alle 1.5 Sekunden 1 Segment und lässt Futter fallen
+            const now = Date.now();
+            if (now - lastBoostSegmentDropTime > 1500) {
+              lastBoostSegmentDropTime = now;
+              const tail = player.segments[player.segments.length - 1];
+              spawnFood(tail.position.x, tail.position.z);
+              player.removeLastSegment();
+              document.getElementById('length-val').textContent = player.segments.length;
+            }
+          } else {
+            stopBoost();
+          }
+        }
+
+        player.update(currentSpeed);
 
         const head = player.segments[0];
 
-        // VOGELPERSPEKTIVE KAMERA FOLGT DEM PLAYER DYNAMISCH
         const baseHeight = 42;
         const growthFactor = Math.min(player.segments.length * 0.3, 30);
         const targetCamY = baseHeight + growthFactor;
@@ -836,20 +1012,22 @@
         camera.position.z = head.position.z;
         camera.position.y += (targetCamY - camera.position.y) * 0.05;
 
-        // Blicke senkrecht auf den Kopf
         camera.lookAt(head.position.x, 0, head.position.z);
 
-        // Futter fressen
+        // Futter fressen (mit 2x Punkte Multiplier bei Boost!)
         for (let i = foods.length - 1; i >= 0; i--) {
           const f = foods[i];
           if (head.position.distanceTo(f.position) < 0.8) {
-            const gainedPoints = f.userData.points || 1;
+            const rawPoints = f.userData.points || 1;
+            const multiplier = isBoosting ? 2 : 1;
+            const gainedPoints = rawPoints * multiplier;
+
             scene.remove(f);
             foods.splice(i, 1);
             player.score += gainedPoints;
             playPopSound();
 
-            if (player.score % 15 === 0 || gainedPoints >= 10) {
+            if (player.score % 15 === 0 || rawPoints >= 10) {
               const tail = player.segments[player.segments.length - 1];
               player.addSegment(tail.position.x, tail.position.z);
             }
@@ -890,7 +1068,7 @@
           bot.targetDir = Math.atan2(-bHead.position.x, -bHead.position.z);
         }
 
-        bot.update();
+        bot.update(BASE_SPEED);
 
         for (let i = foods.length - 1; i >= 0; i--) {
           if (bHead.position.distanceTo(foods[i].position) < 0.8) {
@@ -928,6 +1106,7 @@
 
       bots = [];
       foods = [];
+      stopBoost();
 
       player = new Worm(true, 0x1982c4, 0, 0);
 
@@ -948,6 +1127,7 @@
       document.getElementById('start-menu').classList.add('hidden');
       document.getElementById('gameover-menu').classList.add('hidden');
       document.getElementById('hud').classList.remove('hidden');
+      boostBtn.classList.remove('hidden');
 
       isPlaying = true;
       animate();
@@ -955,9 +1135,11 @@
 
     function onGameOver(score) {
       isPlaying = false;
+      stopBoost();
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
 
       document.getElementById('hud').classList.add('hidden');
+      boostBtn.classList.add('hidden');
       document.getElementById('final-score').textContent = Math.floor(score);
       document.getElementById('gameover-menu').classList.remove('hidden');
 
