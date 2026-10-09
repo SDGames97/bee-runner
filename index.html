@@ -330,7 +330,7 @@
       ctx.fillRect(0, 0, 512, 512);
 
       // 2. Hellgrüne Linien & Bögen
-      ctx.strokeStyle = '#4ade80';
+      ctx.strokeStyle = '#D2B48C';
       ctx.lineWidth = 8;
       ctx.lineCap = 'round';
 
@@ -367,6 +367,25 @@
       if (rand < 95) return { color: 0xa855f7, points: 10, scale: 0.35 };    // 10% Lila
       return { color: 0xeab308, points: 40, scale: 0.45 };                   // 5% Gold
     }
+// Erzeugt eine Verlaufstextur von Dunkelblau (unten) zu Hellblau/Weiß (oben)
+function createGradientBackground() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 2;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  // Linearer Verlauf von oben (0) nach unten (512)
+  const gradient = ctx.createLinearGradient(0, 0, 0, 512);
+  gradient.addColorStop(0.0, '#e0f2fe'); // Oben: Hellblau-Weiß (Sonne / Himmel)
+  gradient.addColorStop(0.4, '#38bdf8'); // Mitte: Strahlendes Hellblau
+  gradient.addColorStop(1.0, '#0f172a'); // Unten: Tiefes Dunkelblau (Horizont)
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 2, 512);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  return texture;
+}
 
     function initThree() {
       renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
