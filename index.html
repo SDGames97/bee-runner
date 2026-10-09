@@ -64,7 +64,7 @@
   </div>
 
   <!-- BOOST BUTTON -->
-  <button id="boost-btn" class="absolute bottom-8 right-8 z-10 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-black px-6 py-4 rounded-3xl shadow-2xl border-2 border-amber-300 text-lg transition active:scale-95 flex items-center gap-2 hidden touch-none">
+  <button id="boost-btn" class="absolute bottom-8 right-8 z-20 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-black px-6 py-4 rounded-3xl shadow-2xl border-2 border-amber-300 text-lg transition active:scale-95 flex items-center gap-2 hidden touch-none select-none">
     ⚡ BOOST 2x
   </button>
 
@@ -610,15 +610,18 @@
 
     const BOT_COLORS = [0xff595e, 0x8ac926, 0x6a4c93, 0xffca3a, 0xff924c];
 
+    // HELLSCHWARZER BODEN (#1f1f1f) MIT WEISSEN LINIEN
     function createRugTexture() {
       const canvas = document.createElement('canvas');
       canvas.width = 512;
       canvas.height = 512;
       const ctx = canvas.getContext('2d');
 
-      ctx.fillStyle = '#404040'; 
+      // Boden in Hellschwarz #1f1f1f
+      ctx.fillStyle = '#1f1f1f'; 
       ctx.fillRect(0, 0, 512, 512);
 
+      // Linien bleiben Weiß
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 8;
       ctx.lineCap = 'round';
@@ -887,20 +890,22 @@
       foods.push(mesh);
     }
 
-    // JOYSTICK STEUERUNG
+    // JOYSTICK STEUERUNG (MULTITOUCH ISOLIERT)
     const joystickContainer = document.getElementById('joystick-container');
     const joystickStick = document.getElementById('joystick-stick');
 
-    let touchActive = false;
+    let moveTouchId = null;
     let touchStartX = 0;
     let touchStartY = 0;
 
     window.addEventListener('pointerdown', (e) => {
       if (!isPlaying) return;
+      // Verhindere Joystick-Trigger auf Buttons
       if (e.target.closest('#boost-btn') || e.target.closest('#settings-btn')) return;
+      if (moveTouchId !== null) return; // Joystick bereits aktiv
 
       initAudio();
-      touchActive = true;
+      moveTouchId = e.pointerId;
       touchStartX = e.clientX;
       touchStartY = e.clientY;
 
@@ -911,7 +916,7 @@
     });
 
     window.addEventListener('pointermove', (e) => {
-      if (!touchActive || !player || player.isDead) return;
+      if (e.pointerId !== moveTouchId || !player || player.isDead) return;
 
       const dx = e.clientX - touchStartX;
       const dy = e.clientY - touchStartY;
@@ -928,15 +933,20 @@
       }
     });
 
-    window.addEventListener('pointerup', () => {
-      touchActive = false;
-      joystickContainer.classList.add('hidden');
-      if (player && !player.isDead) {
-        player.targetDir = player.dir;
+    const resetJoystick = (e) => {
+      if (e.pointerId === moveTouchId) {
+        moveTouchId = null;
+        joystickContainer.classList.add('hidden');
+        if (player && !player.isDead) {
+          player.targetDir = player.dir;
+        }
       }
-    });
+    };
 
-    // BOOST LOGIK (HOLD & KEYBOARD LEERTASTE)
+    window.addEventListener('pointerup', resetJoystick);
+    window.addEventListener('pointercancel', resetJoystick);
+
+    // BOOST LOGIK (ISOLIERT VOM JOYSTICK)
     const boostBtn = document.getElementById('boost-btn');
     const boostIndicator = document.getElementById('boost-indicator');
 
@@ -952,13 +962,39 @@
       boostIndicator.classList.add('hidden');
     }
 
+    // Event-Isolation für den Boost-Button
     boostBtn.addEventListener('pointerdown', (e) => {
       e.stopPropagation();
+      e.preventDefault();
       startBoost();
     });
 
-    window.addEventListener('pointerup', () => stopBoost());
+    boostBtn.addEventListener('pointerup', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      stopBoost();
+    });
 
+    boostBtn.addEventListener('pointercancel', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      stopBoost();
+    });
+
+    // Touch-Fallback für Mobile-Gleichzeitigkeit
+    boostBtn.addEventListener('touchstart', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      startBoost();
+    }, { passive: false });
+
+    boostBtn.addEventListener('touchend', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      stopBoost();
+    }, { passive: false });
+
+    // Keyboard (Leertaste)
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Space' && isPlaying) {
         startBoost();
@@ -979,14 +1015,12 @@
 
       if (player && !player.isDead) {
         
-        // BOOST VERHALTEN & BALANCING
         let currentSpeed = BASE_SPEED;
         
         if (isBoosting) {
           if (player.segments.length > 4) {
-            currentSpeed = BASE_SPEED * 1.8; // 1.8-fache Geschwindigkeit
+            currentSpeed = BASE_SPEED * 1.8; 
 
-            // Kosten: Wurm verliert alle 1.5 Sekunden 1 Segment und lässt Futter fallen
             const now = Date.now();
             if (now - lastBoostSegmentDropTime > 1500) {
               lastBoostSegmentDropTime = now;
@@ -1014,7 +1048,7 @@
 
         camera.lookAt(head.position.x, 0, head.position.z);
 
-        // Futter fressen (mit 2x Punkte Multiplier bei Boost!)
+        // Futter fressen
         for (let i = foods.length - 1; i >= 0; i--) {
           const f = foods[i];
           if (head.position.distanceTo(f.position) < 0.8) {
@@ -1107,6 +1141,7 @@
       bots = [];
       foods = [];
       stopBoost();
+      moveTouchId = null;
 
       player = new Worm(true, 0x1982c4, 0, 0);
 
@@ -1136,6 +1171,7 @@
     function onGameOver(score) {
       isPlaying = false;
       stopBoost();
+      moveTouchId = null;
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
 
       document.getElementById('hud').classList.add('hidden');
