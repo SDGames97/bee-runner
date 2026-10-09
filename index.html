@@ -25,6 +25,19 @@
       height: 100%;
       display: block;
     }
+    /* Custom Scrollbar for Segment Customizer */
+    .custom-scroll::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 8px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #06b6d4;
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body class="bg-slate-900 text-white">
@@ -50,35 +63,81 @@
     </div>
   </div>
 
+  <!-- START & SKIN EDITOR MENU -->
   <div id="start-menu" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-20">
-    <div class="bg-slate-900/95 p-6 rounded-3xl shadow-2xl border border-cyan-500/30 max-w-md w-full text-center relative overflow-hidden">
+    <div class="bg-slate-900/95 p-5 rounded-3xl shadow-2xl border border-cyan-500/30 max-w-lg w-full text-center relative overflow-hidden max-h-[95vh] flex flex-col">
       
-      <h1 class="text-4xl font-black text-cyan-400 drop-shadow-[0_2px_10px_rgba(34,211,238,0.8)] tracking-wide mb-1">🐛 WORMRING</h1>
-      <p class="text-slate-400 text-xs mb-5"> Tipp : Wenn dein Wurm eine bestimmte größe erreicht hat kreise andere Würmer ein!</p>
+      <h1 class="text-3xl font-black text-cyan-400 drop-shadow-[0_2px_10px_rgba(34,211,238,0.8)] tracking-wide mb-1">🐛 WORMRING</h1>
+      <p class="text-slate-400 text-xs mb-3">Erstelle deinen eigenen Wurm &amp; spiele in Vogelperspektive!</p>
 
-      <div class="mb-4 text-left">
-        <label for="player-name" class="block text-xs font-bold text-cyan-300 uppercase mb-1">Dein Spielername</label>
-        <input type="text" id="player-name" placeholder="SpaceWorm" maxlength="15" class="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-400 text-white font-bold text-base transition">
+      <div class="overflow-y-auto pr-1 space-y-4 text-left custom-scroll mb-3">
+        
+        <!-- Spielername -->
+        <div>
+          <label for="player-name" class="block text-xs font-bold text-cyan-300 uppercase mb-1">Dein Spielername</label>
+          <input type="text" id="player-name" placeholder="SpaceWorm" maxlength="15" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-400 text-white font-bold text-sm transition">
+        </div>
+
+        <!-- SKIN EDITOR BEREICH -->
+        <div class="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/80">
+          <div class="flex justify-between items-center mb-2">
+            <h2 class="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-1">🎨 Skin &amp; Segmente Designer (20 Segmente)</h2>
+          </div>
+
+          <!-- Schnellauswahl Generatoren -->
+          <div class="mb-3">
+            <span class="text-[11px] text-slate-400 font-bold block mb-1">Farbverlauf-Generatoren:</span>
+            <div class="grid grid-cols-4 gap-1.5">
+              <button id="preset-stripes" class="py-1 bg-slate-700 hover:bg-slate-600 text-[10px] font-bold rounded-lg border border-slate-600">Abwechselnd</button>
+              <button id="preset-rainbow" class="py-1 bg-gradient-to-r from-red-500 via-green-500 to-blue-500 text-[10px] font-bold rounded-lg text-white">Regenbogen</button>
+              <button id="preset-gradient" class="py-1 bg-gradient-to-r from-cyan-500 to-amber-500 text-[10px] font-bold rounded-lg text-white">Verlauf</button>
+              <button id="preset-random" class="py-1 bg-purple-600 hover:bg-purple-500 text-[10px] font-bold rounded-lg">Zufall</button>
+            </div>
+          </div>
+
+          <!-- Geometrisches Muster Overlay -->
+          <div class="mb-3">
+            <label for="pattern-select" class="text-[11px] text-slate-400 font-bold block mb-1">Geometrisches Form-Muster:</label>
+            <select id="pattern-select" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-bold text-cyan-300 focus:outline-none focus:border-cyan-400">
+              <option value="none">Kein Muster (Einfarbig)</option>
+              <option value="circle">⭕ Kreise</option>
+              <option value="trapezoid">📐 Trapeze</option>
+              <option value="triangle">🔺 Dreiecke</option>
+              <option value="stripes">🏁 Streifen</option>
+              <option value="checker">🏁 Schachbrett</option>
+            </select>
+          </div>
+
+          <!-- 20 Segment Farbwähler -->
+          <div>
+            <span class="text-[11px] text-slate-400 font-bold block mb-1.5">Einzelne Segmentfarben (1 bis 20):</span>
+            <div id="segment-pickers" class="flex gap-1.5 overflow-x-auto pb-2 custom-scroll">
+              <!-- Dynamisch per JS befüllt -->
+            </div>
+          </div>
+        </div>
+
       </div>
 
-      <button id="start-btn" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 active:scale-95 text-white font-black text-lg rounded-2xl shadow-lg shadow-cyan-500/25 transition duration-150 mb-5">
+      <button id="start-btn" class="w-full py-3 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 active:scale-95 text-white font-black text-lg rounded-2xl shadow-lg shadow-cyan-500/25 transition duration-150 mb-3">
         SPIEL STARTEN ▶
       </button>
 
-      <div class="border-t border-slate-800 pt-3 text-left">
-        <div class="flex justify-between items-center mb-2">
+      <div class="border-t border-slate-800 pt-2 text-left">
+        <div class="flex justify-between items-center mb-1">
           <h2 class="text-xs font-bold text-slate-400 uppercase flex items-center gap-1">🏆 Top Highscores</h2>
           <span id="lb-status" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold">Online</span>
         </div>
-        <div class="bg-slate-800/50 rounded-2xl p-2.5 border border-slate-800 max-h-36 overflow-y-auto">
+        <div class="bg-slate-800/50 rounded-xl p-2 border border-slate-800 max-h-24 overflow-y-auto custom-scroll">
           <ol id="leaderboard-list" class="text-xs font-semibold text-slate-300 divide-y divide-slate-800/50">
-            <li class="py-2 text-center text-slate-500 italic">Lade Bestenliste...</li>
+            <li class="py-1 text-center text-slate-500 italic">Lade Bestenliste...</li>
           </ol>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- SETTINGS MODAL -->
   <div id="settings-modal" class="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
     <div class="bg-slate-900 p-6 rounded-3xl border border-slate-700 max-w-xs w-full text-center shadow-2xl">
       <h2 class="text-2xl font-black text-cyan-400 mb-4">Einstellungen</h2>
@@ -99,6 +158,7 @@
     </div>
   </div>
 
+  <!-- GAMEOVER MODAL -->
   <div id="gameover-menu" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-30 hidden">
     <div class="bg-slate-900 p-6 rounded-3xl shadow-2xl border border-rose-500/40 max-w-sm w-full text-center">
       <div class="text-5xl mb-2">💥</div>
@@ -163,6 +223,139 @@
         alert('Lokale Highscores gelöscht!');
       }
     });
+
+    // ==========================================
+    // SKIN & MUSTER DESIGNER LOGIK (20 SEGMENTE)
+    // ==========================================
+    const NUM_CUSTOM_SEGMENTS = 20;
+    let playerSegmentColors = Array(NUM_CUSTOM_SEGMENTS).fill('#1982c4');
+    let selectedPattern = 'none';
+
+    // Standardfarben initialisieren
+    for(let i = 0; i < NUM_CUSTOM_SEGMENTS; i++) {
+      playerSegmentColors[i] = (i % 2 === 0) ? '#06b6d4' : '#10b981';
+    }
+
+    const segmentPickersContainer = document.getElementById('segment-pickers');
+    const patternSelect = document.getElementById('pattern-select');
+
+    function renderSegmentPickers() {
+      segmentPickersContainer.innerHTML = '';
+      playerSegmentColors.forEach((color, idx) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = "flex flex-col items-center flex-shrink-0 bg-slate-900 p-1.5 rounded-xl border border-slate-700";
+        
+        const label = document.createElement('span');
+        label.className = "text-[9px] font-bold text-slate-400 mb-1";
+        label.textContent = `#${idx + 1}`;
+
+        const input = document.createElement('input');
+        input.type = 'color';
+        input.value = color;
+        input.className = "w-7 h-7 rounded-lg cursor-pointer bg-transparent border-0";
+        input.addEventListener('input', (e) => {
+          playerSegmentColors[idx] = e.target.value;
+        });
+
+        wrapper.appendChild(label);
+        wrapper.appendChild(input);
+        segmentPickersContainer.appendChild(wrapper);
+      });
+    }
+
+    // Muster Generatoren Buttons
+    document.getElementById('preset-stripes').addEventListener('click', () => {
+      for(let i = 0; i < NUM_CUSTOM_SEGMENTS; i++) {
+        playerSegmentColors[i] = (i % 2 === 0) ? '#06b6d4' : '#3b82f6';
+      }
+      renderSegmentPickers();
+    });
+
+    document.getElementById('preset-rainbow').addEventListener('click', () => {
+      for(let i = 0; i < NUM_CUSTOM_SEGMENTS; i++) {
+        const hue = (i / NUM_CUSTOM_SEGMENTS) * 360;
+        playerSegmentColors[i] = `hsl(${hue}, 90%, 55%)`;
+      }
+      renderSegmentPickers();
+    });
+
+    document.getElementById('preset-gradient').addEventListener('click', () => {
+      for(let i = 0; i < NUM_CUSTOM_SEGMENTS; i++) {
+        const ratio = i / NUM_CUSTOM_SEGMENTS;
+        const r = Math.floor(6 + ratio * (245 - 6));
+        const g = Math.floor(182 + ratio * (158 - 182));
+        const b = Math.floor(212 + ratio * (11 - 212));
+        playerSegmentColors[i] = `rgb(${r},${g},${b})`;
+      }
+      renderSegmentPickers();
+    });
+
+    document.getElementById('preset-random').addEventListener('click', () => {
+      for(let i = 0; i < NUM_CUSTOM_SEGMENTS; i++) {
+        playerSegmentColors[i] = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+      }
+      renderSegmentPickers();
+    });
+
+    patternSelect.addEventListener('change', (e) => {
+      selectedPattern = e.target.value;
+    });
+
+    renderSegmentPickers();
+
+    // ==========================================
+    // TEXTURE DYNAMISCHER MUSTER-GENERATOR
+    // ==========================================
+    const textureCache = {};
+
+    function createSegmentTexture(baseColorHex, patternType) {
+      const cacheKey = `${baseColorHex}_${patternType}`;
+      if (textureCache[cacheKey]) return textureCache[cacheKey];
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+
+      // Basis-Farbe
+      ctx.fillStyle = baseColorHex;
+      ctx.fillRect(0, 0, 256, 256);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 12;
+
+      if (patternType === 'circle') {
+        ctx.beginPath();
+        ctx.arc(128, 128, 60, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (patternType === 'trapezoid') {
+        ctx.beginPath();
+        ctx.moveTo(64, 180);
+        ctx.lineTo(192, 180);
+        ctx.lineTo(160, 76);
+        ctx.lineTo(96, 76);
+        ctx.closePath();
+        ctx.fill();
+      } else if (patternType === 'triangle') {
+        ctx.beginPath();
+        ctx.moveTo(128, 50);
+        ctx.lineTo(200, 190);
+        ctx.lineTo(56, 190);
+        ctx.closePath();
+        ctx.fill();
+      } else if (patternType === 'stripes') {
+        ctx.fillRect(0, 40, 256, 40);
+        ctx.fillRect(0, 160, 256, 40);
+      } else if (patternType === 'checker') {
+        ctx.fillRect(0, 0, 128, 128);
+        ctx.fillRect(128, 128, 128, 128);
+      }
+
+      const texture = new THREE.CanvasTexture(canvas);
+      textureCache[cacheKey] = texture;
+      return texture;
+    }
 
     // ==========================================
     // AUDIO SYNTHESIZER
@@ -309,8 +502,8 @@
 
     const SPEED = 0.085; 
     const SEGMENT_DISTANCE = 0.42;
-    const MAX_TURN_SPEED = 0.07; // SCHWERE LENKUNG
-    const ARENA_SIZE = 40;
+    const MAX_TURN_SPEED = 0.07;
+    const ARENA_SIZE = 80;
 
     let player;
     let bots = [];
@@ -318,23 +511,20 @@
 
     const BOT_COLORS = [0xff595e, 0x8ac926, 0x6a4c93, 0xffca3a, 0xff924c];
 
-    // ERZEUGT DAS BRAUN-GRÜNE MUSTER FÜR DEN BODEN
+    // HELLBRAUNER BODEN MIT WEISSEN LINIEN
     function createRugTexture() {
       const canvas = document.createElement('canvas');
       canvas.width = 512;
       canvas.height = 512;
       const ctx = canvas.getContext('2d');
 
-      // 1. Erdiges Braun als Hintergrund
-      ctx.fillStyle = '#5c3d11';
+      ctx.fillStyle = '#d2b48c'; 
       ctx.fillRect(0, 0, 512, 512);
 
-      // 2. Hellgrüne Linien & Bögen
-      ctx.strokeStyle = '#4ade80';
+      ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 8;
       ctx.lineCap = 'round';
 
-      // Bögen
       ctx.beginPath();
       ctx.arc(256, 0, 160, 0, Math.PI);
       ctx.stroke();
@@ -343,7 +533,6 @@
       ctx.arc(256, 512, 160, Math.PI, 0);
       ctx.stroke();
 
-      // Moderne Striche
       ctx.beginPath();
       ctx.moveTo(80, 200);
       ctx.lineTo(80, 312);
@@ -354,18 +543,17 @@
       const texture = new THREE.CanvasTexture(canvas);
       texture.wrapS = THREE.RepeatWrapping;
       texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat.set(12, 12);
+      texture.repeat.set(24, 24);
       return texture;
     }
 
-    // ESSEN PROBABILITÄTEN (40% Grau, 30% Grün, 15% Blau, 10% Lila, 5% Gold)
     function getRandomFoodType() {
       const rand = Math.random() * 100;
-      if (rand < 40) return { color: 0x9ca3af, points: 1, scale: 0.22 };     // 40% Grau
-      if (rand < 70) return { color: 0x22c55e, points: 2, scale: 0.26 };     // 30% Grün
-      if (rand < 85) return { color: 0x3b82f6, points: 5, scale: 0.30 };     // 15% Blau
-      if (rand < 95) return { color: 0xa855f7, points: 10, scale: 0.35 };    // 10% Lila
-      return { color: 0xeab308, points: 40, scale: 0.45 };                   // 5% Gold
+      if (rand < 40) return { color: 0x9ca3af, points: 1, scale: 0.22 };     
+      if (rand < 70) return { color: 0x22c55e, points: 2, scale: 0.26 };     
+      if (rand < 85) return { color: 0x3b82f6, points: 5, scale: 0.30 };     
+      if (rand < 95) return { color: 0xa855f7, points: 10, scale: 0.35 };    
+      return { color: 0xeab308, points: 40, scale: 0.45 };                   
     }
 
     function initThree() {
@@ -375,32 +563,40 @@
       renderer.shadowMap.enabled = true;
 
       scene = new THREE.Scene();
-      // KORREKTUR: Hex-String mit Anführungszeichen
-      scene.background = new THREE.Color("#5c3d11");
-      scene.fog = new THREE.FogExp2(0x3d270b, 0.015);
+      scene.background = new THREE.Color("#4ade80");
+      scene.fog = new THREE.FogExp2(0x4ade80, 0.008);
 
-      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-      camera.position.set(0, 18, 14);
+      // KAMERA VOGELPERSPEKTIVE (Direkt von oben)
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 300);
+      camera.position.set(0, 45, 0);
       camera.lookAt(0, 0, 0);
 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
       scene.add(ambientLight);
 
-      const dirLight = new THREE.DirectionalLight(0x38bdf8, 1.0);
-      dirLight.position.set(20, 40, 20);
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+      dirLight.position.set(40, 80, 40);
       dirLight.castShadow = true;
       scene.add(dirLight);
 
-      // Boden mit neuer Textur
+      // Spielfeld
       const groundGeo = new THREE.PlaneGeometry(ARENA_SIZE * 2, ARENA_SIZE * 2);
       const groundMat = new THREE.MeshStandardMaterial({ 
         map: createRugTexture(), 
-        roughness: 0.8 
+        roughness: 0.7 
       });
       const ground = new THREE.Mesh(groundGeo, groundMat);
       ground.rotation.x = -Math.PI / 2;
       ground.receiveShadow = true;
       scene.add(ground);
+
+      // Grüne Umgebung
+      const outerGroundGeo = new THREE.PlaneGeometry(ARENA_SIZE * 10, ARENA_SIZE * 10);
+      const outerGroundMat = new THREE.MeshBasicMaterial({ color: 0x4ade80 });
+      const outerGround = new THREE.Mesh(outerGroundGeo, outerGroundMat);
+      outerGround.rotation.x = -Math.PI / 2;
+      outerGround.position.y = -0.05;
+      scene.add(outerGround);
 
       window.addEventListener('resize', onWindowResize);
     }
@@ -412,7 +608,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    // WURM KLASSE
+    // WURM KLASSE MEHRFARBIG & FORTLAUFENDE SEGMENTE
     class Worm {
       constructor(isPlayer = false, color = 0x1982c4, startX = 0, startZ = 0) {
         this.isPlayer = isPlayer;
@@ -426,7 +622,11 @@
         this.meshGroup = new THREE.Group();
         scene.add(this.meshGroup);
 
-        const headMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.2, metalness: 0.2 });
+        // Kopf-Material
+        const headColorHex = isPlayer ? playerSegmentColors[0] : color;
+        const headMat = isPlayer 
+          ? new THREE.MeshStandardMaterial({ map: createSegmentTexture(headColorHex, selectedPattern), roughness: 0.3 })
+          : new THREE.MeshStandardMaterial({ color: color, roughness: 0.2 });
 
         const headGeo = new THREE.SphereGeometry(0.5, 16, 16);
         const headMesh = new THREE.Mesh(headGeo, headMat);
@@ -456,14 +656,28 @@
 
         // Start-Segmente
         for (let i = 0; i < 6; i++) {
-          this.addSegment(startX - (i + 1) * SEGMENT_DISTANCE * Math.sin(this.dir), startZ - (i + 1) * SEGMENT_DISTANCE * Math.cos(this.dir));
+          this.addSegment(
+            startX - (i + 1) * SEGMENT_DISTANCE * Math.sin(this.dir), 
+            startZ - (i + 1) * SEGMENT_DISTANCE * Math.cos(this.dir)
+          );
         }
       }
 
       addSegment(x, z) {
-        const scale = Math.max(0.28, 0.46 - this.segments.length * 0.002);
+        const scale = 0.46; // KONSTANTE GRÖSSE
+        const segIdx = this.segments.length;
+
+        let bodyMat;
+        if (this.isPlayer) {
+          // Fortlaufendes Wiederholen der 20 ausgewählten Farben
+          const colorHex = playerSegmentColors[(segIdx - 1) % NUM_CUSTOM_SEGMENTS];
+          const texture = createSegmentTexture(colorHex, selectedPattern);
+          bodyMat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.3 });
+        } else {
+          bodyMat = new THREE.MeshStandardMaterial({ color: this.color, roughness: 0.3 });
+        }
+
         const bodyGeo = new THREE.SphereGeometry(scale, 12, 12);
-        const bodyMat = new THREE.MeshStandardMaterial({ color: this.color, roughness: 0.3 });
         const mesh = new THREE.Mesh(bodyGeo, bodyMat);
         mesh.castShadow = true;
         mesh.position.set(x, scale, z);
@@ -613,17 +827,16 @@
 
         const head = player.segments[0];
 
-        const baseDistance = 14;
-        const baseHeight = 18;
-        const growthFactor = Math.min(player.segments.length * 0.25, 25);
-
-        const targetCamZ = head.position.z + baseDistance + growthFactor;
-        const targetCamY = baseHeight + (growthFactor * 0.8);
+        // VOGELPERSPEKTIVE KAMERA FOLGT DEM PLAYER DYNAMISCH
+        const baseHeight = 42;
+        const growthFactor = Math.min(player.segments.length * 0.3, 30);
+        const targetCamY = baseHeight + growthFactor;
 
         camera.position.x = head.position.x;
+        camera.position.z = head.position.z;
         camera.position.y += (targetCamY - camera.position.y) * 0.05;
-        camera.position.z += (targetCamZ - camera.position.z) * 0.05;
 
+        // Blicke senkrecht auf den Kopf
         camera.lookAt(head.position.x, 0, head.position.z);
 
         // Futter fressen
@@ -644,7 +857,7 @@
             document.getElementById('score-val').textContent = player.score;
             document.getElementById('length-val').textContent = player.segments.length;
             
-            for (let k = 0; k < 2; k++) spawnFood();
+            if (Math.random() < 0.7) spawnFood();
           }
         }
 
@@ -688,13 +901,13 @@
               const tail = bot.segments[bot.segments.length - 1];
               bot.addSegment(tail.position.x, tail.position.z);
             }
-            spawnFood();
+            if (Math.random() < 0.7) spawnFood();
           }
         }
       });
 
       bots = bots.filter(b => !b.isDead);
-      while (bots.length < 6) {
+      while (bots.length < 8) {
         const bx = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
         const bz = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
         const color = BOT_COLORS[Math.floor(Math.random() * BOT_COLORS.length)];
@@ -718,11 +931,11 @@
 
       player = new Worm(true, 0x1982c4, 0, 0);
 
-      for (let i = 0; i < 600; i++) {
+      for (let i = 0; i < 420; i++) {
         spawnFood();
       }
 
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 8; i++) {
         const bx = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
         const bz = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
         const color = BOT_COLORS[Math.floor(Math.random() * BOT_COLORS.length)];
