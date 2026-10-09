@@ -53,10 +53,21 @@
     </div>
   </div>
 
-  <div id="hud" class="absolute top-4 left-4 flex justify-between items-center pointer-events-none hidden z-10">
+  <!-- HUD MIT PUNKTEN & LIVE RANGLISTE -->
+  <div id="hud" class="absolute top-4 left-4 right-20 flex justify-between items-start pointer-events-none hidden z-10">
     <div class="bg-slate-900/80 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-lg border border-cyan-500/30 text-white font-bold text-base md:text-lg flex items-center gap-3">
       <span>🌟 Punkte:</span> <span id="score-val" class="text-cyan-400 text-xl">0</span>
       <span id="boost-indicator" class="hidden text-xs bg-amber-500/30 border border-amber-400 text-amber-300 px-2.5 py-0.5 rounded-full animate-pulse">BOOST!</span>
+    </div>
+
+    <!-- LIVE INGAME RANGLISTE (TOP 5) -->
+    <div class="bg-slate-900/80 backdrop-blur-md p-3 rounded-2xl shadow-lg border border-slate-700 w-44">
+      <div class="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+        👑 Live Match Top 5
+      </div>
+      <ol id="live-leaderboard" class="text-xs font-bold space-y-1">
+        <!-- Dynamische Einträge -->
+      </ol>
     </div>
   </div>
 
@@ -115,7 +126,6 @@
         <button id="close-skin-btn" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white font-bold flex items-center justify-center">✕</button>
       </div>
 
-      <!-- 3D VORSCHAU CANVAS -->
       <div class="w-full h-36 bg-slate-950 rounded-2xl mb-3 relative overflow-hidden border border-purple-500/30">
         <canvas id="skin-preview-canvas" class="w-full h-full block"></canvas>
         <span class="absolute bottom-2 right-3 text-[10px] font-bold text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-700">3D Vorschau</span>
@@ -315,7 +325,7 @@
     });
 
     // ==========================================
-    // SKIN MENÜ LOGIK (SEPARAT WITH 3D PREVIEW)
+    // SKIN MENÜ LOGIK WITH 3D PREVIEW
     // ==========================================
     const NUM_CUSTOM_SEGMENTS = 20;
     let playerSegmentColors = Array(NUM_CUSTOM_SEGMENTS).fill('#1982c4');
@@ -503,7 +513,6 @@
         const mesh = new THREE.Mesh(geo, mat);
 
         if (i === 0) {
-          // Kopf Augen hinzufügen
           const eyeGeo = new THREE.SphereGeometry(0.12, 8, 8);
           const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
           const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
@@ -650,7 +659,7 @@
     }
 
     // ==========================================
-    // LEADERBOARD LOGIK
+    // LEADERBOARD LOGIK (GLOBAL)
     // ==========================================
     const lbStatusEl = document.getElementById('lb-status');
     const lbListEl = document.getElementById('leaderboard-list');
@@ -755,11 +764,37 @@
     let player;
     let bots = [];
     let foods = [];
+    let deathParticles = [];
+    let trailParticles = [];
 
     let isBoosting = false;
     let lastBoostSegmentDropTime = 0;
 
-    const BOT_COLORS = [0xff595e, 0x8ac926, 0x6a4c93, 0xffca3a, 0xff924c];
+    const BOT_NAMES = ["Alpha", "Vortex", "SlitherX", "Shadow", "NeonBug", "Viper", "Omega", "Phantom"];
+    const BOT_COLORS = ["#ff595e", "#8ac926", "#6a4c93", "#ffca3a", "#ff924c"];
+
+    // 3D KRONE BLAUPAUKE
+    let crownMeshGlobal = null;
+
+    function createCrownMesh() {
+      const crownGroup = new THREE.Group();
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8, roughness: 0.2 });
+
+      const baseGeo = new THREE.CylinderGeometry(0.32, 0.35, 0.15, 12);
+      const base = new THREE.Mesh(baseGeo, goldMat);
+      crownGroup.add(base);
+
+      for (let i = 0; i < 5; i++) {
+        const spikeGeo = new THREE.ConeGeometry(0.08, 0.3, 4);
+        const spike = new THREE.Mesh(spikeGeo, goldMat);
+        const angle = (i / 5) * Math.PI * 2;
+        spike.position.set(Math.sin(angle) * 0.28, 0.2, Math.cos(angle) * 0.28);
+        crownGroup.add(spike);
+      }
+
+      crownGroup.position.set(0, 0.65, 0);
+      return crownGroup;
+    }
 
     function createRugTexture() {
       const canvas = document.createElement('canvas');
@@ -844,6 +879,8 @@
       outerGround.position.y = -0.05;
       scene.add(outerGround);
 
+      crownMeshGlobal = createCrownMesh();
+
       window.addEventListener('resize', onWindowResize);
     }
 
@@ -854,10 +891,11 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    // WURM KLASSE
+    // WURM KLASSE WITH DYNAMISCHEN AUGEN & CROWN
     class Worm {
-      constructor(isPlayer = false, color = 0x1982c4, startX = 0, startZ = 0) {
+      constructor(isPlayer = false, name = "Bot", color = "#1982c4", startX = 0, startZ = 0) {
         this.isPlayer = isPlayer;
+        this.name = name;
         this.color = color;
         this.score = 0;
         this.dir = Math.random() * Math.PI * 2;
@@ -872,7 +910,7 @@
         const headColorHex = isPlayer ? playerSegmentColors[0] : color;
         const headMat = isPlayer 
           ? new THREE.MeshStandardMaterial({ map: createSegmentTexture(headColorHex, selectedPattern), roughness: 0.3 })
-          : new THREE.MeshStandardMaterial({ color: color, roughness: 0.2 });
+          : new THREE.MeshStandardMaterial({ color: new THREE.Color(color), roughness: 0.2 });
 
         const headGeo = new THREE.SphereGeometry(0.5, 16, 16);
         const headMesh = new THREE.Mesh(headGeo, headMat);
@@ -881,24 +919,24 @@
         this.meshGroup.add(headMesh);
         this.segments.push(headMesh);
 
-        // Augen
+        // Augen für dynamische Blicke
         const eyeGeo = new THREE.SphereGeometry(0.12, 8, 8);
         const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
         const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
 
-        const eyeLeft = new THREE.Mesh(eyeGeo, eyeMat);
-        eyeLeft.position.set(-0.2, 0.22, 0.3);
-        headMesh.add(eyeLeft);
-        const pupilLeft = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), pupilMat);
-        pupilLeft.position.set(0, 0, 0.08);
-        eyeLeft.add(pupilLeft);
+        this.eyeLeft = new THREE.Mesh(eyeGeo, eyeMat);
+        this.eyeLeft.position.set(-0.2, 0.22, 0.3);
+        headMesh.add(this.eyeLeft);
+        this.pupilLeft = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), pupilMat);
+        this.pupilLeft.position.set(0, 0, 0.08);
+        this.eyeLeft.add(this.pupilLeft);
 
-        const eyeRight = new THREE.Mesh(eyeGeo, eyeMat);
-        eyeRight.position.set(0.2, 0.22, 0.3);
-        headMesh.add(eyeRight);
-        const pupilRight = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), pupilMat);
-        pupilRight.position.set(0, 0, 0.08);
-        eyeRight.add(pupilRight);
+        this.eyeRight = new THREE.Mesh(eyeGeo, eyeMat);
+        this.eyeRight.position.set(0.2, 0.22, 0.3);
+        headMesh.add(this.eyeRight);
+        this.pupilRight = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), pupilMat);
+        this.pupilRight.position.set(0, 0, 0.08);
+        this.eyeRight.add(this.pupilRight);
 
         for (let i = 0; i < 2000; i++) {
           this.pathHistory.push(new THREE.Vector3(
@@ -926,7 +964,7 @@
           const texture = createSegmentTexture(colorHex, selectedPattern);
           bodyMat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.3 });
         } else {
-          bodyMat = new THREE.MeshStandardMaterial({ color: this.color, roughness: 0.3 });
+          bodyMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(this.color), roughness: 0.3 });
         }
 
         const bodyGeo = new THREE.SphereGeometry(scale, 12, 12);
@@ -998,10 +1036,17 @@
           }
         }
 
-        // Dynamische Anpassung des Pfad-Speichers zur Vermeidung von Glitches bei sehr langen Würmern
         const maxHistoryNeeded = Math.ceil((this.segments.length * SEGMENT_DISTANCE) / currentSpeed) + 200;
         if (this.pathHistory.length > maxHistoryNeeded) {
           this.pathHistory.length = maxHistoryNeeded;
+        }
+
+        // Dynamische Augen-Anpassung
+        this.updateEyes(currentSpeed);
+
+        // Trail-Effekt für Spieler
+        if (this.isPlayer && Math.random() < 0.3) {
+          spawnTrailParticle(head.position.x, head.position.z, playerSegmentColors[0]);
         }
 
         for (let i = 8; i < this.segments.length; i++) {
@@ -1012,12 +1057,39 @@
         }
       }
 
+      updateEyes(currentSpeed) {
+        // Bei Boost: Angespannter Blick (Pupillen kleiner)
+        // Nahe an Wänden/Gefahr: Schockierte Augen (Augen breiter)
+        const head = this.segments[0];
+        const nearBorder = Math.abs(head.position.x) > ARENA_SIZE - 8 || Math.abs(head.position.z) > ARENA_SIZE - 8;
+
+        if (nearBorder) {
+          this.eyeLeft.scale.set(1.4, 1.4, 1.4);
+          this.eyeRight.scale.set(1.4, 1.4, 1.4);
+          this.pupilLeft.scale.set(0.6, 0.6, 0.6);
+          this.pupilRight.scale.set(0.6, 0.6, 0.6);
+        } else if (currentSpeed > BASE_SPEED) {
+          this.eyeLeft.scale.set(0.9, 0.9, 0.9);
+          this.eyeRight.scale.set(0.9, 0.9, 0.9);
+          this.pupilLeft.scale.set(0.4, 0.4, 0.4);
+          this.pupilRight.scale.set(0.4, 0.4, 0.4);
+        } else {
+          this.eyeLeft.scale.set(1, 1, 1);
+          this.eyeRight.scale.set(1, 1, 1);
+          this.pupilLeft.scale.set(1, 1, 1);
+          this.pupilRight.scale.set(1, 1, 1);
+        }
+      }
+
       die() {
         if (this.isDead) return;
         this.isDead = true;
 
+        // Sanfte Todes-Animation (in Wurmfarbe)
+        const primaryColor = this.isPlayer ? playerSegmentColors[0] : this.color;
         this.segments.forEach(seg => {
           spawnFood(seg.position.x, seg.position.z);
+          spawnDeathParticles(seg.position.x, seg.position.z, primaryColor);
         });
 
         scene.remove(this.meshGroup);
@@ -1027,6 +1099,36 @@
           onGameOver(this.score);
         }
       }
+    }
+
+    // SANFTE TODES-PARTIKEL
+    function spawnDeathParticles(x, z, colorHex) {
+      for (let i = 0; i < 4; i++) {
+        const pGeo = new THREE.SphereGeometry(0.18, 8, 8);
+        const pMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(colorHex), transparent: true, opacity: 0.8 });
+        const pMesh = new THREE.Mesh(pGeo, pMat);
+
+        pMesh.position.set(x, 0.5, z);
+        pMesh.userData = {
+          vx: (Math.random() - 0.5) * 0.1,
+          vy: Math.random() * 0.12 + 0.05,
+          vz: (Math.random() - 0.5) * 0.1,
+          life: 1.0
+        };
+        scene.add(pMesh);
+        deathParticles.push(pMesh);
+      }
+    }
+
+    // TRAIL PARTIKEL ERZEUGEN
+    function spawnTrailParticle(x, z, colorHex) {
+      const pGeo = new THREE.SphereGeometry(0.1, 6, 6);
+      const pMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(colorHex), transparent: true, opacity: 0.6 });
+      const pMesh = new THREE.Mesh(pGeo, pMat);
+      pMesh.position.set(x + (Math.random()-0.5)*0.2, 0.2, z + (Math.random()-0.5)*0.2);
+      pMesh.userData = { life: 1.0 };
+      scene.add(pMesh);
+      trailParticles.push(pMesh);
     }
 
     function spawnFood(x = null, z = null) {
@@ -1162,6 +1264,46 @@
       }
     });
 
+    // UPDATING LIVE RANGLISTE & KRONE
+    const liveLeaderboardEl = document.getElementById('live-leaderboard');
+
+    function updateLiveMatchLeaderboard() {
+      const allWorms = [];
+      if (player && !player.isDead) allWorms.push(player);
+      bots.forEach(b => { if (!b.isDead) allWorms.push(b); });
+
+      allWorms.sort((a,b) => b.score - a.score);
+
+      liveLeaderboardEl.innerHTML = '';
+      allWorms.slice(0, 5).forEach((w, idx) => {
+        const li = document.createElement('li');
+        li.className = "flex justify-between items-center";
+        
+        const mainColor = w.isPlayer ? playerSegmentColors[0] : w.color;
+        
+        li.innerHTML = `
+          <span class="truncate flex items-center gap-1 max-w-[100px]" style="color: ${mainColor}">
+            ${idx === 0 ? '👑 ' : ''}${escapeHtml(w.name)}
+          </span>
+          <span class="text-white font-black">${Math.floor(w.score)}</span>
+        `;
+        liveLeaderboardEl.appendChild(li);
+      });
+
+      // Goldene Krone für den 1. Platz setzen
+      if (crownMeshGlobal) {
+        if (allWorms.length > 0) {
+          const leaderHead = allWorms[0].segments[0];
+          if (crownMeshGlobal.parent !== leaderHead) {
+            if (crownMeshGlobal.parent) crownMeshGlobal.parent.remove(crownMeshGlobal);
+            leaderHead.add(crownMeshGlobal);
+          }
+        } else if (crownMeshGlobal.parent) {
+          crownMeshGlobal.parent.remove(crownMeshGlobal);
+        }
+      }
+    }
+
     // GAME ANIMATION LOOP
     function animate() {
       if (!isPlaying) return;
@@ -1169,7 +1311,6 @@
       animationFrameId = requestAnimationFrame(animate);
 
       if (player && !player.isDead) {
-        
         let currentSpeed = BASE_SPEED;
         
         if (isBoosting) {
@@ -1265,8 +1406,39 @@
         const bx = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
         const bz = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
         const color = BOT_COLORS[Math.floor(Math.random() * BOT_COLORS.length)];
-        bots.push(new Worm(false, color, bx, bz));
+        const bName = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
+        bots.push(new Worm(false, bName, color, bx, bz));
       }
+
+      // Death Partikel Update
+      for (let i = deathParticles.length - 1; i >= 0; i--) {
+        const p = deathParticles[i];
+        p.position.x += p.userData.vx;
+        p.position.y += p.userData.vy;
+        p.position.z += p.userData.vz;
+        p.userData.life -= 0.02;
+        p.material.opacity = p.userData.life;
+
+        if (p.userData.life <= 0) {
+          scene.remove(p);
+          deathParticles.splice(i, 1);
+        }
+      }
+
+      // Trail Partikel Update
+      for (let i = trailParticles.length - 1; i >= 0; i--) {
+        const p = trailParticles[i];
+        p.userData.life -= 0.04;
+        p.material.opacity = p.userData.life;
+        p.scale.multiplyScalar(0.96);
+
+        if (p.userData.life <= 0) {
+          scene.remove(p);
+          trailParticles.splice(i, 1);
+        }
+      }
+
+      updateLiveMatchLeaderboard();
 
       renderer.render(scene, camera);
     }
@@ -1279,13 +1451,17 @@
       if (player) scene.remove(player.meshGroup);
       bots.forEach(b => scene.remove(b.meshGroup));
       foods.forEach(f => scene.remove(f));
+      deathParticles.forEach(p => scene.remove(p));
+      trailParticles.forEach(p => scene.remove(p));
 
       bots = [];
       foods = [];
+      deathParticles = [];
+      trailParticles = [];
       stopBoost();
       moveTouchId = null;
 
-      player = new Worm(true, 0x1982c4, 0, 0);
+      player = new Worm(true, name, playerSegmentColors[0], 0, 0);
 
       for (let i = 0; i < 420; i++) {
         spawnFood();
@@ -1295,7 +1471,8 @@
         const bx = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
         const bz = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
         const color = BOT_COLORS[Math.floor(Math.random() * BOT_COLORS.length)];
-        bots.push(new Worm(false, color, bx, bz));
+        const bName = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
+        bots.push(new Worm(false, bName, color, bx, bz));
       }
 
       document.getElementById('score-val').textContent = '0';
