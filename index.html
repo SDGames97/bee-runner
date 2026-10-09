@@ -82,9 +82,12 @@
           SPIEL STARTEN ▶
         </button>
 
-        <div class="flex justify-start mb-4">
-          <button id="open-skin-btn" class="py-2.5 px-5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black rounded-xl border border-purple-400/30 shadow-md transition active:scale-95 flex items-center gap-2">
+        <div class="flex justify-between gap-2 mb-4">
+          <button id="open-skin-btn" class="flex-1 py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black rounded-xl border border-purple-400/30 shadow-md transition active:scale-95 flex items-center justify-center gap-2">
             🎨 SKINS
+          </button>
+          <button id="open-menu-settings-btn" class="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition active:scale-95 flex items-center justify-center gap-1.5">
+            ⚙️ Einstellungen
           </button>
         </div>
       </div>
@@ -103,21 +106,27 @@
     </div>
   </div>
 
-  <!-- SKIN MODAL -->
+  <!-- SKIN MODAL MIT 3D-VORSCHAU -->
   <div id="skin-modal" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-40 hidden">
-    <div class="bg-slate-900 p-5 rounded-3xl border border-purple-500/40 max-w-lg w-full text-center shadow-2xl flex flex-col max-h-[90vh]">
+    <div class="bg-slate-900 p-5 rounded-3xl border border-purple-500/40 max-w-lg w-full text-center shadow-2xl flex flex-col max-h-[95vh]">
       
-      <div class="flex justify-between items-center mb-3">
+      <div class="flex justify-between items-center mb-2">
         <h2 class="text-2xl font-black text-purple-400 flex items-center gap-2">🎨 Skin Menü</h2>
         <button id="close-skin-btn" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white font-bold flex items-center justify-center">✕</button>
       </div>
 
-      <div class="flex gap-2 mb-3 border-b border-slate-800 pb-2">
-        <button id="tab-presets-btn" class="flex-1 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 active:bg-purple-600 active:text-white transition">Voreingestellte Skins</button>
-        <button id="tab-custom-btn" class="flex-1 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white transition">Eigene Haut</button>
+      <!-- 3D VORSCHAU CANVAS -->
+      <div class="w-full h-36 bg-slate-950 rounded-2xl mb-3 relative overflow-hidden border border-purple-500/30">
+        <canvas id="skin-preview-canvas" class="w-full h-full block"></canvas>
+        <span class="absolute bottom-2 right-3 text-[10px] font-bold text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-700">3D Vorschau</span>
       </div>
 
-      <div id="tab-presets-content" class="hidden overflow-y-auto pr-1 space-y-2 text-left custom-scroll mb-3 max-h-[55vh]">
+      <div class="flex gap-2 mb-3 border-b border-slate-800 pb-2">
+        <button id="tab-presets-btn" class="flex-1 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white transition">Voreingestellte Skins</button>
+        <button id="tab-custom-btn" class="flex-1 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 active:bg-purple-600 active:text-white transition">Eigene Haut</button>
+      </div>
+
+      <div id="tab-presets-content" class="overflow-y-auto pr-1 space-y-2 text-left custom-scroll mb-3 max-h-[40vh]">
         <div class="grid grid-cols-2 gap-2">
           <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left" data-colors="#06b6d4,#3b82f6" data-pattern="none">
             <span class="block text-xs font-bold text-cyan-400 mb-1">Cyber Neon</span>
@@ -142,7 +151,7 @@
         </div>
       </div>
 
-      <div id="tab-custom-content" class="overflow-y-auto pr-1 space-y-3 text-left custom-scroll mb-3 max-h-[55vh]">
+      <div id="tab-custom-content" class="hidden overflow-y-auto pr-1 space-y-3 text-left custom-scroll mb-3 max-h-[40vh]">
         <div class="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/80">
           
           <div class="mb-3">
@@ -192,7 +201,6 @@
           <input type="checkbox" id="sound-toggle" checked class="w-5 h-5 accent-cyan-500">
         </div>
 
-        <!-- NEU: BOOST BUTTON POSITION -->
         <div class="bg-slate-800 p-3 rounded-xl border border-slate-700">
           <label for="boost-pos-select" class="block text-xs font-bold text-slate-300 mb-1.5">⚡ Boost-Button Position:</label>
           <select id="boost-pos-select" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs font-bold text-cyan-300 focus:outline-none focus:border-cyan-400">
@@ -264,6 +272,7 @@
     // ==========================================
     let soundEnabled = true;
     const settingsBtn = document.getElementById('settings-btn');
+    const openMenuSettingsBtn = document.getElementById('open-menu-settings-btn');
     const settingsModal = document.getElementById('settings-modal');
     const closeSettingsBtn = document.getElementById('close-settings-btn');
     const soundToggle = document.getElementById('sound-toggle');
@@ -273,10 +282,10 @@
     const boostPosSelect = document.getElementById('boost-pos-select');
 
     settingsBtn.addEventListener('click', () => settingsModal.classList.remove('hidden'));
+    openMenuSettingsBtn.addEventListener('click', () => settingsModal.classList.remove('hidden'));
     closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
     soundToggle.addEventListener('change', (e) => soundEnabled = e.target.checked);
 
-    // Boost Button Position wechseln
     function updateBoostPosition(pos) {
       boostBtn.classList.remove('bottom-8', 'right-8', 'left-8', 'top-8', 'top-20');
       
@@ -287,15 +296,12 @@
       } else if (pos === 'top-left') {
         boostBtn.classList.add('top-20', 'left-8');
       } else {
-        // Default: bottom-right
         boostBtn.classList.add('bottom-8', 'right-8');
       }
       localStorage.setItem('worm_boost_pos', pos);
     }
 
     boostPosSelect.addEventListener('change', (e) => updateBoostPosition(e.target.value));
-    
-    // Geladene Position anwenden
     const savedBoostPos = localStorage.getItem('worm_boost_pos') || 'bottom-right';
     boostPosSelect.value = savedBoostPos;
     updateBoostPosition(savedBoostPos);
@@ -309,7 +315,7 @@
     });
 
     // ==========================================
-    // SKIN MENÜ LOGIK (SEPARAT)
+    // SKIN MENÜ LOGIK (SEPARAT WITH 3D PREVIEW)
     // ==========================================
     const NUM_CUSTOM_SEGMENTS = 20;
     let playerSegmentColors = Array(NUM_CUSTOM_SEGMENTS).fill('#1982c4');
@@ -329,9 +335,18 @@
     const tabPresetsContent = document.getElementById('tab-presets-content');
     const tabCustomContent = document.getElementById('tab-custom-content');
 
-    openSkinBtn.addEventListener('click', () => skinModal.classList.remove('hidden'));
-    closeSkinBtn.addEventListener('click', () => skinModal.classList.add('hidden'));
-    saveSkinBtn.addEventListener('click', () => skinModal.classList.add('hidden'));
+    openSkinBtn.addEventListener('click', () => {
+      skinModal.classList.remove('hidden');
+      initSkinPreview();
+    });
+    closeSkinBtn.addEventListener('click', () => {
+      skinModal.classList.add('hidden');
+      stopSkinPreview();
+    });
+    saveSkinBtn.addEventListener('click', () => {
+      skinModal.classList.add('hidden');
+      stopSkinPreview();
+    });
 
     tabPresetsBtn.addEventListener('click', () => {
       tabPresetsContent.classList.remove('hidden');
@@ -366,6 +381,7 @@
         input.className = "w-7 h-7 rounded-lg cursor-pointer bg-transparent border-0";
         input.addEventListener('input', (e) => {
           playerSegmentColors[idx] = e.target.value;
+          updatePreviewSkin();
         });
 
         wrapper.appendChild(label);
@@ -394,7 +410,7 @@
           }
         }
         renderSegmentPickers();
-        alert('Skin ausgewählt!');
+        updatePreviewSkin();
       });
     });
 
@@ -403,6 +419,7 @@
         playerSegmentColors[i] = (i % 2 === 0) ? '#06b6d4' : '#3b82f6';
       }
       renderSegmentPickers();
+      updatePreviewSkin();
     });
 
     document.getElementById('preset-rainbow').addEventListener('click', () => {
@@ -411,6 +428,7 @@
         playerSegmentColors[i] = `hsl(${hue}, 90%, 55%)`;
       }
       renderSegmentPickers();
+      updatePreviewSkin();
     });
 
     document.getElementById('preset-gradient').addEventListener('click', () => {
@@ -422,6 +440,7 @@
         playerSegmentColors[i] = `rgb(${r},${g},${b})`;
       }
       renderSegmentPickers();
+      updatePreviewSkin();
     });
 
     document.getElementById('preset-random').addEventListener('click', () => {
@@ -429,13 +448,108 @@
         playerSegmentColors[i] = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
       }
       renderSegmentPickers();
+      updatePreviewSkin();
     });
 
     patternSelect.addEventListener('change', (e) => {
       selectedPattern = e.target.value;
+      updatePreviewSkin();
     });
 
     renderSegmentPickers();
+
+    // ==========================================
+    // 3D SKIN PREVIEW SYSTEM
+    // ==========================================
+    let previewRenderer, previewScene, previewCamera, previewAnimId;
+    let previewWormSegments = [];
+
+    function initSkinPreview() {
+      const pCanvas = document.getElementById('skin-preview-canvas');
+      const w = pCanvas.clientWidth || 400;
+      const h = pCanvas.clientHeight || 150;
+
+      if (!previewRenderer) {
+        previewRenderer = new THREE.WebGLRenderer({ canvas: pCanvas, antialias: true, alpha: true });
+      }
+      previewRenderer.setSize(w, h);
+
+      previewScene = new THREE.Scene();
+      previewCamera = new THREE.PerspectiveCamera(40, w / h, 0.1, 100);
+      previewCamera.position.set(0, 10, 12);
+      previewCamera.lookAt(0, 0, 0);
+
+      const amb = new THREE.AmbientLight(0xffffff, 0.9);
+      previewScene.add(amb);
+      const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+      dir.position.set(5, 10, 5);
+      previewScene.add(dir);
+
+      createPreviewWorm();
+      animateSkinPreview();
+    }
+
+    function createPreviewWorm() {
+      if (!previewScene) return;
+      previewWormSegments.forEach(s => previewScene.remove(s));
+      previewWormSegments = [];
+
+      const numSegments = 12;
+      for (let i = 0; i < numSegments; i++) {
+        const colorHex = playerSegmentColors[i % NUM_CUSTOM_SEGMENTS];
+        const texture = createSegmentTexture(colorHex, selectedPattern);
+        const mat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.3 });
+        const geo = new THREE.SphereGeometry(0.5, 16, 16);
+        const mesh = new THREE.Mesh(geo, mat);
+
+        if (i === 0) {
+          // Kopf Augen hinzufügen
+          const eyeGeo = new THREE.SphereGeometry(0.12, 8, 8);
+          const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+          const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+
+          const eyeLeft = new THREE.Mesh(eyeGeo, eyeMat);
+          eyeLeft.position.set(-0.2, 0.22, 0.3);
+          mesh.add(eyeLeft);
+          const pupilLeft = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), pupilMat);
+          pupilLeft.position.set(0, 0, 0.08);
+          eyeLeft.add(pupilLeft);
+
+          const eyeRight = new THREE.Mesh(eyeGeo, eyeMat);
+          eyeRight.position.set(0.2, 0.22, 0.3);
+          mesh.add(eyeRight);
+          const pupilRight = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), pupilMat);
+          pupilRight.position.set(0, 0, 0.08);
+          eyeRight.add(pupilRight);
+        }
+
+        previewScene.add(mesh);
+        previewWormSegments.push(mesh);
+      }
+    }
+
+    function updatePreviewSkin() {
+      if (previewScene) createPreviewWorm();
+    }
+
+    function animateSkinPreview() {
+      previewAnimId = requestAnimationFrame(animateSkinPreview);
+      const time = Date.now() * 0.003;
+
+      previewWormSegments.forEach((seg, i) => {
+        const x = (i - 6) * 0.75;
+        const z = Math.sin(time + i * 0.4) * 0.8;
+        seg.position.set(x, 0, z);
+      });
+
+      if (previewRenderer && previewScene && previewCamera) {
+        previewRenderer.render(previewScene, previewCamera);
+      }
+    }
+
+    function stopSkinPreview() {
+      if (previewAnimId) cancelAnimationFrame(previewAnimId);
+    }
 
     // ==========================================
     // TEXTURE GENERATOR
@@ -699,8 +813,6 @@
 
       scene = new THREE.Scene();
       scene.background = new THREE.Color("#4ade80");
-      
-      // NEBEL DEAKTIVIERT / ENTFERNT
       scene.fog = null;
 
       camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 300);
@@ -788,7 +900,7 @@
         pupilRight.position.set(0, 0, 0.08);
         eyeRight.add(pupilRight);
 
-        for (let i = 0; i < 500; i++) {
+        for (let i = 0; i < 2000; i++) {
           this.pathHistory.push(new THREE.Vector3(
             startX - i * 0.05 * Math.sin(this.dir),
             0.5,
@@ -886,7 +998,8 @@
           }
         }
 
-        const maxHistoryNeeded = Math.ceil((this.segments.length * SEGMENT_DISTANCE) / currentSpeed) + 50;
+        // Dynamische Anpassung des Pfad-Speichers zur Vermeidung von Glitches bei sehr langen Würmern
+        const maxHistoryNeeded = Math.ceil((this.segments.length * SEGMENT_DISTANCE) / currentSpeed) + 200;
         if (this.pathHistory.length > maxHistoryNeeded) {
           this.pathHistory.length = maxHistoryNeeded;
         }
@@ -1063,7 +1176,6 @@
           if (player.score >= 10) {
             currentSpeed = BASE_SPEED * 1.8;
 
-            // Boost verbraucht nur Punkte (KEIN FUTTERSPAWM MEHR HINTEN DROPPEN)
             const now = Date.now();
             if (now - lastBoostSegmentDropTime > 400) {
               lastBoostSegmentDropTime = now;
@@ -1080,8 +1192,6 @@
         player.update(currentSpeed);
 
         const head = player.segments[0];
-
-        // KAMERA HOCHSKALIERUNG ENTFERNT / BEGRENZT
         const targetCamY = 42; 
 
         camera.position.x = head.position.x;
@@ -1090,7 +1200,7 @@
 
         camera.lookAt(head.position.x, 0, head.position.z);
 
-        // Futter fressen (1x Multiplikator - Ganz normale Punkte)
+        // Futter fressen
         for (let i = foods.length - 1; i >= 0; i--) {
           const f = foods[i];
           if (head.position.distanceTo(f.position) < 0.8) {
