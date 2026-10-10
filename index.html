@@ -117,7 +117,7 @@
     </div>
   </div>
 
-  <!-- SKIN MODAL MIT TOP-DOWN 3D-VORSCHAU -->
+  <!-- SKIN MODAL MIT DUNKELBLAUEM, KOMPAKTEM VORSCHAUFELD & HORIZONTALEM WURM -->
   <div id="skin-modal" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-40 hidden">
     <div class="bg-slate-900 p-5 rounded-3xl border border-purple-500/40 max-w-lg w-full text-center shadow-2xl flex flex-col max-h-[95vh]">
       
@@ -126,9 +126,10 @@
         <button id="close-skin-btn" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white font-bold flex items-center justify-center">✕</button>
       </div>
 
-      <div class="w-full h-28 bg-slate-950 rounded-2xl mb-3 relative overflow-hidden border border-purple-500/30">
+      <!-- Kompakteres Vorschaufenster mit Dunkelblauem Hintergrund -->
+      <div class="w-full h-20 bg-slate-950 rounded-2xl mb-3 relative overflow-hidden border border-blue-900/60 shadow-inner">
         <canvas id="skin-preview-canvas" class="w-full h-full block"></canvas>
-        <span class="absolute bottom-1.5 right-2.5 text-[9px] font-bold text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-700">Vogelperspektive Vorschau</span>
+        <span class="absolute bottom-1 right-2 text-[8px] font-bold text-blue-300 bg-slate-900/80 px-1.5 py-0.5 rounded border border-blue-800/50">3D Vorschau</span>
       </div>
 
       <div class="flex gap-2 mb-3 border-b border-slate-800 pb-2">
@@ -312,7 +313,7 @@
     updateBoostPosition(savedBoostPos);
 
     // ==========================================
-    // SKIN MENÜ LOGIK WITH TOP-DOWN 3D PREVIEW
+    // SKIN MENÜ LOGIK WITH DUNKELBLAUER 3D PREVIEW
     // ==========================================
     const NUM_CUSTOM_SEGMENTS = 20;
     let playerSegmentColors = Array(NUM_CUSTOM_SEGMENTS).fill('#1982c4');
@@ -456,7 +457,7 @@
     renderSegmentPickers();
 
     // ==========================================
-    // TOP-DOWN 3D SKIN PREVIEW SYSTEM (GRÖSSER)
+    // DUNKELBLAUE 3D SKIN PREVIEW (HORIZONTAL & GRÖSSER)
     // ==========================================
     let previewRenderer, previewScene, previewCamera, previewAnimId;
     let previewWormSegments = [];
@@ -464,7 +465,7 @@
     function initSkinPreview() {
       const pCanvas = document.getElementById('skin-preview-canvas');
       const w = pCanvas.clientWidth || 400;
-      const h = pCanvas.clientHeight || 112;
+      const h = pCanvas.clientHeight || 80;
 
       if (!previewRenderer) {
         previewRenderer = new THREE.WebGLRenderer({ canvas: pCanvas, antialias: true, alpha: true });
@@ -472,15 +473,17 @@
       previewRenderer.setSize(w, h);
 
       previewScene = new THREE.Scene();
-      // Vogelperspektive Kamera (direkt von oben nach unten schauend)
-      previewCamera = new THREE.PerspectiveCamera(40, w / h, 0.1, 100);
-      previewCamera.position.set(0, 11, 0.1);
+      // Dunkelblauer Hintergrund für das Vorschaufeld
+      previewScene.background = new THREE.Color("#090d16");
+
+      previewCamera = new THREE.PerspectiveCamera(38, w / h, 0.1, 100);
+      previewCamera.position.set(0, 0, 8.5);
       previewCamera.lookAt(0, 0, 0);
 
-      const amb = new THREE.AmbientLight(0xffffff, 0.9);
+      const amb = new THREE.AmbientLight(0xffffff, 0.95);
       previewScene.add(amb);
-      const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-      dir.position.set(0, 10, 5);
+      const dir = new THREE.DirectionalLight(0x93c5fd, 0.8);
+      dir.position.set(2, 6, 8);
       previewScene.add(dir);
 
       createPreviewWorm();
@@ -496,28 +499,31 @@
       for (let i = 0; i < numSegments; i++) {
         const colorHex = playerSegmentColors[i % NUM_CUSTOM_SEGMENTS];
         const texture = createSegmentTexture(colorHex, selectedPattern);
-        const mat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.3 });
-        // Größerer Radius für deutlich bessere Sichtbarkeit im Menü
-        const geo = new THREE.SphereGeometry(0.72, 16, 16);
+        const mat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.25 });
+        
+        // Größerer Wurm für die flache Box
+        const geo = new THREE.SphereGeometry(0.65, 16, 16);
         const mesh = new THREE.Mesh(geo, mat);
 
+        // Der Kopf ist das erste Segment (ganz rechts)
         if (i === 0) {
-          const eyeGeo = new THREE.SphereGeometry(0.16, 8, 8);
+          const eyeGeo = new THREE.SphereGeometry(0.15, 8, 8);
           const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
           const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
 
+          // Augen nach RECHTS ausgerichtet (Blick nach vorne in Bewegungsrichtung)
           const eyeLeft = new THREE.Mesh(eyeGeo, eyeMat);
-          eyeLeft.position.set(-0.3, 0.35, 0.45);
+          eyeLeft.position.set(0.35, 0.28, 0.35);
           mesh.add(eyeLeft);
           const pupilLeft = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), pupilMat);
-          pupilLeft.position.set(0, 0, 0.1);
+          pupilLeft.position.set(0.08, 0, 0.05);
           eyeLeft.add(pupilLeft);
 
           const eyeRight = new THREE.Mesh(eyeGeo, eyeMat);
-          eyeRight.position.set(0.3, 0.35, 0.45);
+          eyeRight.position.set(0.35, -0.28, 0.35);
           mesh.add(eyeRight);
           const pupilRight = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), pupilMat);
-          pupilRight.position.set(0, 0, 0.1);
+          pupilRight.position.set(0.08, 0, 0.05);
           eyeRight.add(pupilRight);
         }
 
@@ -532,12 +538,13 @@
 
     function animateSkinPreview() {
       previewAnimId = requestAnimationFrame(animateSkinPreview);
-      const time = Date.now() * 0.0025;
+      const time = Date.now() * 0.0035;
 
+      // Horizontale Bewegung von Links nach Rechts mit Wellenbewegung
       previewWormSegments.forEach((seg, i) => {
-        const x = Math.sin(time + i * 0.35) * 2.2;
-        const z = (i - 4.5) * 0.75;
-        seg.position.set(x, 0, z);
+        const x = (4 - i) * 0.72; // Kopf rechts, Schwanz links
+        const y = Math.sin(time - i * 0.4) * 0.55; // Sanfte Wellenbewegung auf der Y-Achse
+        seg.position.set(x, y, 0);
       });
 
       if (previewRenderer && previewScene && previewCamera) {
@@ -1025,7 +1032,6 @@
           spawnTrailParticle(head.position.x, head.position.z, playerSegmentColors[0]);
         }
 
-        // Wenn Boost aktiv ist, erzeugen wir den mehrfarbigen Leucht-Schleier (aus 10 Farben)
         if (isBoosting && this.isPlayer && Math.random() < 0.75) {
           const randomColorHex = BOOST_VEIL_COLORS[Math.floor(Math.random() * BOOST_VEIL_COLORS.length)];
           const randomSeg = this.segments[Math.floor(Math.random() * this.segments.length)];
@@ -1109,7 +1115,6 @@
       trailParticles.push(pMesh);
     }
 
-    // BOOST SCHLEIER / AURA PARTIKEL
     let boostVeilParticles = [];
 
     function spawnBoostVeilParticle(x, z, colorHex) {
@@ -1432,7 +1437,7 @@
       renderer.render(scene, camera);
     }
 
-    // SPIEL START & OVER (JETZT MIT 300 MEHR FUTTER = 720 GESAMT)
+    // SPIEL START & OVER (720 FUTTERTEILE ZUM START)
     function startGame() {
       const name = nameInput.value.trim() || 'WurmPlayer';
       localStorage.setItem('worm_player_name', name);
@@ -1454,8 +1459,7 @@
 
       player = new Worm(true, name, playerSegmentColors[0], 0, 0);
 
-      // Start-Futter: 420 + 300 = 720 Futterteile
-      for (let i = 0; i < 720; i++) {
+      for (let i = 0; i < 1200; i++) {
         spawnFood();
       }
 
