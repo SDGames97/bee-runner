@@ -53,19 +53,19 @@
     </div>
   </div>
 
-  <!-- HUD MIT PUNKTEN & LIVE RANGLISTE -->
+  <!-- HUD MIT PUNKTEN & KLEINER, TRANSPARENTER LIVE RANGLISTE -->
   <div id="hud" class="absolute top-4 left-4 right-20 flex justify-between items-start pointer-events-none hidden z-10">
     <div class="bg-slate-900/80 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-lg border border-cyan-500/30 text-white font-bold text-base md:text-lg flex items-center gap-3">
       <span>🌟 Punkte:</span> <span id="score-val" class="text-cyan-400 text-xl">0</span>
       <span id="boost-indicator" class="hidden text-xs bg-amber-500/30 border border-amber-400 text-amber-300 px-2.5 py-0.5 rounded-full animate-pulse">BOOST!</span>
     </div>
 
-    <!-- LIVE INGAME RANGLISTE (TOP 5) -->
-    <div class="bg-slate-900/80 backdrop-blur-md p-3 rounded-2xl shadow-lg border border-slate-700 w-44">
-      <div class="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-        👑 Live Match Top 5
+    <!-- ELEGANTE, LEICHT TRANSPARENTE LIVE RANGLISTE (TOP 5) -->
+    <div class="bg-slate-950/40 backdrop-blur-sm p-2.5 rounded-xl shadow-lg border border-slate-800/60 w-36">
+      <div class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+        🏆 Top 5
       </div>
-      <ol id="live-leaderboard" class="text-xs font-bold space-y-1">
+      <ol id="live-leaderboard" class="text-[11px] font-bold space-y-0.5">
         <!-- Dynamische Einträge -->
       </ol>
     </div>
@@ -773,29 +773,6 @@
     const BOT_NAMES = ["Alpha", "Vortex", "SlitherX", "Shadow", "NeonBug", "Viper", "Omega", "Phantom"];
     const BOT_COLORS = ["#ff595e", "#8ac926", "#6a4c93", "#ffca3a", "#ff924c"];
 
-    // 3D KRONE BLAUPAUKE
-    let crownMeshGlobal = null;
-
-    function createCrownMesh() {
-      const crownGroup = new THREE.Group();
-      const goldMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8, roughness: 0.2 });
-
-      const baseGeo = new THREE.CylinderGeometry(0.32, 0.35, 0.15, 12);
-      const base = new THREE.Mesh(baseGeo, goldMat);
-      crownGroup.add(base);
-
-      for (let i = 0; i < 5; i++) {
-        const spikeGeo = new THREE.ConeGeometry(0.08, 0.3, 4);
-        const spike = new THREE.Mesh(spikeGeo, goldMat);
-        const angle = (i / 5) * Math.PI * 2;
-        spike.position.set(Math.sin(angle) * 0.28, 0.2, Math.cos(angle) * 0.28);
-        crownGroup.add(spike);
-      }
-
-      crownGroup.position.set(0, 0.65, 0);
-      return crownGroup;
-    }
-
     function createRugTexture() {
       const canvas = document.createElement('canvas');
       canvas.width = 512;
@@ -879,8 +856,6 @@
       outerGround.position.y = -0.05;
       scene.add(outerGround);
 
-      crownMeshGlobal = createCrownMesh();
-
       window.addEventListener('resize', onWindowResize);
     }
 
@@ -891,7 +866,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    // WURM KLASSE WITH DYNAMISCHEN AUGEN & CROWN
+    // WURM KLASSE WITH DYNAMISCHEN AUGEN
     class Worm {
       constructor(isPlayer = false, name = "Bot", color = "#1982c4", startX = 0, startZ = 0) {
         this.isPlayer = isPlayer;
@@ -1041,10 +1016,8 @@
           this.pathHistory.length = maxHistoryNeeded;
         }
 
-        // Dynamische Augen-Anpassung
         this.updateEyes(currentSpeed);
 
-        // Trail-Effekt für Spieler
         if (this.isPlayer && Math.random() < 0.3) {
           spawnTrailParticle(head.position.x, head.position.z, playerSegmentColors[0]);
         }
@@ -1058,8 +1031,6 @@
       }
 
       updateEyes(currentSpeed) {
-        // Bei Boost: Angespannter Blick (Pupillen kleiner)
-        // Nahe an Wänden/Gefahr: Schockierte Augen (Augen breiter)
         const head = this.segments[0];
         const nearBorder = Math.abs(head.position.x) > ARENA_SIZE - 8 || Math.abs(head.position.z) > ARENA_SIZE - 8;
 
@@ -1085,7 +1056,6 @@
         if (this.isDead) return;
         this.isDead = true;
 
-        // Sanfte Todes-Animation (in Wurmfarbe)
         const primaryColor = this.isPlayer ? playerSegmentColors[0] : this.color;
         this.segments.forEach(seg => {
           spawnFood(seg.position.x, seg.position.z);
@@ -1101,7 +1071,6 @@
       }
     }
 
-    // SANFTE TODES-PARTIKEL
     function spawnDeathParticles(x, z, colorHex) {
       for (let i = 0; i < 4; i++) {
         const pGeo = new THREE.SphereGeometry(0.18, 8, 8);
@@ -1120,7 +1089,6 @@
       }
     }
 
-    // TRAIL PARTIKEL ERZEUGEN
     function spawnTrailParticle(x, z, colorHex) {
       const pGeo = new THREE.SphereGeometry(0.1, 6, 6);
       const pMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(colorHex), transparent: true, opacity: 0.6 });
@@ -1264,7 +1232,7 @@
       }
     });
 
-    // UPDATING LIVE RANGLISTE & KRONE
+    // UPDATING LIVE RANGLISTE (CLEAN & TRANSPARENT)
     const liveLeaderboardEl = document.getElementById('live-leaderboard');
 
     function updateLiveMatchLeaderboard() {
@@ -1282,26 +1250,11 @@
         const mainColor = w.isPlayer ? playerSegmentColors[0] : w.color;
         
         li.innerHTML = `
-          <span class="truncate flex items-center gap-1 max-w-[100px]" style="color: ${mainColor}">
-            ${idx === 0 ? '👑 ' : ''}${escapeHtml(w.name)}
-          </span>
+          <span class="truncate max-w-[85px]" style="color: ${mainColor}">${escapeHtml(w.name)}</span>
           <span class="text-white font-black">${Math.floor(w.score)}</span>
         `;
         liveLeaderboardEl.appendChild(li);
       });
-
-      // Goldene Krone für den 1. Platz setzen
-      if (crownMeshGlobal) {
-        if (allWorms.length > 0) {
-          const leaderHead = allWorms[0].segments[0];
-          if (crownMeshGlobal.parent !== leaderHead) {
-            if (crownMeshGlobal.parent) crownMeshGlobal.parent.remove(crownMeshGlobal);
-            leaderHead.add(crownMeshGlobal);
-          }
-        } else if (crownMeshGlobal.parent) {
-          crownMeshGlobal.parent.remove(crownMeshGlobal);
-        }
-      }
     }
 
     // GAME ANIMATION LOOP
@@ -1463,7 +1416,7 @@
 
       player = new Worm(true, name, playerSegmentColors[0], 0, 0);
 
-      for (let i = 0; i < 420; i++) {
+      for (let i = 0; i < 800; i++) {
         spawnFood();
       }
 
