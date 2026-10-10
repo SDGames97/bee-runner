@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
   <title>WORMRING 3D</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -43,7 +43,7 @@
 
   <canvas id="game-canvas"></canvas>
 
-  <button id="settings-btn" class="absolute top-4 right-4 z-10 bg-slate-800/80 hover:bg-slate-700/80 backdrop-blur-md p-3 rounded-2xl shadow-lg border border-slate-600 text-xl transition active:scale-90">
+  <button id="settings-btn" class="absolute top-4 right-4 z-10 bg-slate-800/80 hover:bg-slate-700/80 backdrop-blur-md p-3 rounded-2xl shadow-lg border border-slate-600 text-xl transition active:scale-90 cursor-pointer">
     ⚙️
   </button>
 
@@ -61,7 +61,7 @@
     </div>
 
     <!-- LIVE INGAME RANGLISTE (TOP 5) -->
-    <div class="bg-slate-950/40 backdrop-blur-sm p-2.5 rounded-xl shadow-lg border border-slate-800/60 w-36">
+    <div class="bg-slate-950/40 backdrop-blur-sm p-2.5 rounded-xl shadow-lg border border-slate-800/60 w-36 pointer-events-auto">
       <div class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
         🏆 Top 5
       </div>
@@ -72,7 +72,7 @@
   </div>
 
   <!-- BOOST BUTTON -->
-  <button id="boost-btn" class="absolute bottom-8 right-8 z-20 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-black px-6 py-4 rounded-3xl shadow-2xl border-2 border-amber-300 text-lg transition active:scale-95 flex items-center gap-2 hidden touch-none select-none">
+  <button id="boost-btn" class="absolute bottom-8 right-8 z-20 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-black px-6 py-4 rounded-3xl shadow-2xl border-2 border-amber-300 text-lg transition active:scale-95 flex items-center gap-2 hidden touch-none select-none cursor-pointer">
     ⚡ BOOST
   </button>
 
@@ -89,15 +89,15 @@
           <input type="text" id="player-name" placeholder="SpaceWorm" maxlength="15" class="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-400 text-white font-bold text-base transition">
         </div>
 
-        <button id="start-btn" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 active:scale-95 text-white font-black text-lg rounded-2xl shadow-lg shadow-cyan-500/25 transition duration-150 mb-3">
+        <button id="start-btn" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 active:scale-95 text-white font-black text-lg rounded-2xl shadow-lg shadow-cyan-500/25 transition duration-150 mb-3 cursor-pointer">
           SPIEL STARTEN ▶
         </button>
 
         <div class="flex justify-between gap-2 mb-4">
-          <button id="open-skin-btn" class="flex-1 py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black rounded-xl border border-purple-400/30 shadow-md transition active:scale-95 flex items-center justify-center gap-2">
+          <button id="open-skin-btn" class="flex-1 py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black rounded-xl border border-purple-400/30 shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
             🎨 SKINS
           </button>
-          <button id="open-menu-settings-btn" class="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition active:scale-95 flex items-center justify-center gap-1.5">
+          <button id="open-menu-settings-btn" class="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer">
             ⚙️ Einstellungen
           </button>
         </div>
@@ -117,78 +117,72 @@
     </div>
   </div>
 
-  <!-- SKIN MODAL MIT DUNKELBLAUEM, KOMPAKTEM VORSCHAUFELD -->
+  <!-- SKIN MODAL -->
   <div id="skin-modal" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-40 hidden">
     <div class="bg-slate-900 p-5 rounded-3xl border border-purple-500/40 max-w-lg w-full text-center shadow-2xl flex flex-col max-h-[95vh]">
       
       <div class="flex justify-between items-center mb-2">
         <h2 class="text-2xl font-black text-purple-400 flex items-center gap-2">🎨 Skin Menü</h2>
-        <button id="close-skin-btn" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white font-bold flex items-center justify-center">✕</button>
+        <button id="close-skin-btn" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white font-bold flex items-center justify-center cursor-pointer">✕</button>
       </div>
 
-      <!-- Kompakteres Vorschaufenster mit Dunkelblauem Hintergrund -->
       <div class="w-full h-20 bg-slate-950 rounded-2xl mb-3 relative overflow-hidden border border-blue-900/60 shadow-inner">
         <canvas id="skin-preview-canvas" class="w-full h-full block"></canvas>
         <span class="absolute bottom-1 right-2 text-[8px] font-bold text-blue-300 bg-slate-900/80 px-1.5 py-0.5 rounded border border-blue-800/50">3D Vorschau</span>
       </div>
 
       <div class="flex gap-2 mb-3 border-b border-slate-800 pb-2">
-        <button id="tab-presets-btn" class="flex-1 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white transition">Voreingestellte Skins</button>
-        <button id="tab-custom-btn" class="flex-1 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 active:bg-purple-600 active:text-white transition">Farbverlauf Erstellen</button>
+        <button id="tab-presets-btn" class="flex-1 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white transition cursor-pointer">Voreingestellte Skins</button>
+        <button id="tab-custom-btn" class="flex-1 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 transition cursor-pointer">Farbverlauf Erstellen</button>
       </div>
 
       <!-- PRESET SKINS -->
       <div id="tab-presets-content" class="overflow-y-auto pr-1 space-y-2 text-left custom-scroll mb-3 max-h-[40vh]">
         <div class="grid grid-cols-2 gap-2">
-          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left" data-color1="#06b6d4" data-color2="#3b82f6">
+          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left cursor-pointer" data-color1="#06b6d4" data-color2="#3b82f6">
             <span class="block text-xs font-bold text-cyan-400 mb-1">Cyber Neon</span>
             <div class="h-3 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500"></div>
           </button>
-          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left" data-color1="#ef4444" data-color2="#eab308">
+          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left cursor-pointer" data-color1="#ef4444" data-color2="#eab308">
             <span class="block text-xs font-bold text-amber-400 mb-1">Feuerdrache</span>
             <div class="h-3 rounded-full bg-gradient-to-r from-red-500 to-yellow-500"></div>
           </button>
-          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left" data-color1="#22c55e" data-color2="#10b981">
+          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left cursor-pointer" data-color1="#22c55e" data-color2="#10b981">
             <span class="block text-xs font-bold text-emerald-400 mb-1">Waldmeister</span>
             <div class="h-3 rounded-full bg-gradient-to-r from-green-500 to-emerald-400"></div>
           </button>
-          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left" data-color1="#a855f7" data-color2="#ec4899">
+          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left cursor-pointer" data-color1="#a855f7" data-color2="#ec4899">
             <span class="block text-xs font-bold text-pink-400 mb-1">Glow Worm</span>
             <div class="h-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"></div>
           </button>
-          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left col-span-2" data-rainbow="true">
+          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left col-span-2 cursor-pointer" data-rainbow="true">
             <span class="block text-xs font-bold text-yellow-300 mb-1">Regenbogen Express</span>
             <div class="h-3 rounded-full bg-gradient-to-r from-red-500 via-green-500 via-blue-500 to-purple-500"></div>
           </button>
         </div>
       </div>
 
-      <!-- FARBVERLAUF AUS 2 FARBEN ERSTELLEN -->
+      <!-- FARBVERLAUF -->
       <div id="tab-custom-content" class="hidden overflow-y-auto pr-1 space-y-3 text-left custom-scroll mb-3 max-h-[40vh]">
         <div class="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/80">
-          
           <div class="flex gap-2 mb-3">
-            <button id="select-color1-btn" class="flex-1 py-2 px-3 rounded-xl border-2 border-cyan-400 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2">
+            <button id="select-color1-btn" class="flex-1 py-2 px-3 rounded-xl border-2 border-cyan-400 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2 cursor-pointer">
               <span id="color1-preview" class="w-4 h-4 rounded-full border border-white" style="background:#06b6d4"></span>
               1. Farbe (Kopf)
             </button>
-            <button id="select-color2-btn" class="flex-1 py-2 px-3 rounded-xl border-2 border-slate-700 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2">
+            <button id="select-color2-btn" class="flex-1 py-2 px-3 rounded-xl border-2 border-slate-700 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2 cursor-pointer">
               <span id="color2-preview" class="w-4 h-4 rounded-full border border-white" style="background:#10b981"></span>
               2. Farbe (Schwanz)
             </button>
           </div>
-
           <div>
             <span id="palette-label" class="text-[11px] font-bold text-cyan-300 block mb-2">Wähle die 1. Farbe (Kopf):</span>
-            <!-- 30 FESTE FARBEN PALETTE -->
-            <div id="color-palette" class="grid grid-cols-6 gap-2 bg-slate-900 p-2.5 rounded-2xl border border-slate-700 max-h-36 overflow-y-auto custom-scroll">
-            </div>
+            <div id="color-palette" class="grid grid-cols-6 gap-2 bg-slate-900 p-2.5 rounded-2xl border border-slate-700 max-h-36 overflow-y-auto custom-scroll"></div>
           </div>
-
         </div>
       </div>
 
-      <button id="save-skin-btn" class="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm rounded-xl transition shadow-lg">
+      <button id="save-skin-btn" class="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm rounded-xl transition shadow-lg cursor-pointer">
         Skin Übernehmen &amp; Schließen
       </button>
     </div>
@@ -198,16 +192,14 @@
   <div id="settings-modal" class="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
     <div class="bg-slate-900 p-6 rounded-3xl border border-slate-700 max-w-xs w-full text-center shadow-2xl">
       <h2 class="text-2xl font-black text-cyan-400 mb-4">Einstellungen</h2>
-      
       <div class="space-y-4 mb-6 text-left">
         <div class="flex justify-between items-center bg-slate-800 p-3 rounded-xl border border-slate-700">
           <span class="text-sm font-bold text-slate-300">🔊 Soundeffekte</span>
-          <input type="checkbox" id="sound-toggle" checked class="w-5 h-5 accent-cyan-500">
+          <input type="checkbox" id="sound-toggle" checked class="w-5 h-5 accent-cyan-500 cursor-pointer">
         </div>
-
         <div class="bg-slate-800 p-3 rounded-xl border border-slate-700">
           <label for="boost-pos-select" class="block text-xs font-bold text-slate-300 mb-1.5">⚡ Boost-Button Position:</label>
-          <select id="boost-pos-select" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs font-bold text-cyan-300 focus:outline-none focus:border-cyan-400">
+          <select id="boost-pos-select" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs font-bold text-cyan-300 focus:outline-none focus:border-cyan-400 cursor-pointer">
             <option value="bottom-right">Unten Rechts (Standard)</option>
             <option value="bottom-left">Unten Links</option>
             <option value="top-right">Oben Rechts</option>
@@ -215,8 +207,7 @@
           </select>
         </div>
       </div>
-
-      <button id="close-settings-btn" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm rounded-xl border border-slate-600 transition">
+      <button id="close-settings-btn" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm rounded-xl border border-slate-600 transition cursor-pointer">
         Schließen
       </button>
     </div>
@@ -228,13 +219,11 @@
       <div class="text-5xl mb-2">💥</div>
       <h2 class="text-3xl font-black text-rose-500 mb-2">Game Over!</h2>
       <p class="text-slate-400 text-sm mb-4">Du bist zusammengestoßen.</p>
-      
       <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 mb-6">
         <div class="text-xs text-amber-400 font-bold uppercase mb-1">Erreichte Punkte</div>
         <div id="final-score" class="text-4xl font-extrabold text-cyan-400">0</div>
       </div>
-
-      <button id="restart-btn" class="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 active:scale-95 text-white font-black text-xl rounded-2xl shadow-lg transition">
+      <button id="restart-btn" class="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 active:scale-95 text-white font-black text-xl rounded-2xl shadow-lg transition cursor-pointer">
         NOCHMAL SPIELEN 🔄
       </button>
     </div>
@@ -287,7 +276,6 @@
 
     function updateBoostPosition(pos) {
       boostBtn.classList.remove('bottom-8', 'right-8', 'left-8', 'top-8', 'top-20');
-      
       if (pos === 'bottom-left') {
         boostBtn.classList.add('bottom-8', 'left-8');
       } else if (pos === 'top-right') {
@@ -306,7 +294,7 @@
     updateBoostPosition(savedBoostPos);
 
     // ==========================================
-    // 30 FESTE FARBEN & ZWEI-FARBEN-FARBVERLAUF LOGIK
+    // SKIN LOGIK & PALETTE
     // ==========================================
     const FIXED_30_COLORS = [
       "#ffffff", "#000000", "#ef4444", "#f97316", "#f59e0b", "#eab308",
@@ -317,9 +305,9 @@
     ];
 
     const NUM_CUSTOM_SEGMENTS = 20;
-    let selectedColor1 = "#06b6d4"; // Cyan
-    let selectedColor2 = "#10b981"; // Emerald
-    let activeColorSlot = 1; // 1 = Kopf, 2 = Schwanz
+    let selectedColor1 = "#06b6d4";
+    let selectedColor2 = "#10b981";
+    let activeColorSlot = 1;
     let playerSegmentColors = Array(NUM_CUSTOM_SEGMENTS).fill("#06b6d4");
 
     function hexToRgb(hex) {
@@ -333,7 +321,6 @@
       return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
     }
 
-    // Erzeugt sanften Farbverlauf aus 2 Farben über 20 Segmente
     function recalculateGradient() {
       const c1 = hexToRgb(selectedColor1);
       const c2 = hexToRgb(selectedColor2);
@@ -381,29 +368,29 @@
     tabPresetsBtn.addEventListener('click', () => {
       tabPresetsContent.classList.remove('hidden');
       tabCustomContent.classList.add('hidden');
-      tabPresetsBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white transition";
-      tabCustomBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 active:bg-purple-600 active:text-white transition";
+      tabPresetsBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white transition cursor-pointer";
+      tabCustomBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 transition cursor-pointer";
     });
 
     tabCustomBtn.addEventListener('click', () => {
       tabCustomContent.classList.remove('hidden');
       tabPresetsContent.classList.add('hidden');
-      tabCustomBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white transition";
-      tabPresetsBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 active:bg-purple-600 active:text-white transition";
+      tabCustomBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white transition cursor-pointer";
+      tabPresetsBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 transition cursor-pointer";
     });
 
     selectColor1Btn.addEventListener('click', () => {
       activeColorSlot = 1;
-      selectColor1Btn.className = "flex-1 py-2 px-3 rounded-xl border-2 border-cyan-400 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2";
-      selectColor2Btn.className = "flex-1 py-2 px-3 rounded-xl border-2 border-slate-700 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2";
+      selectColor1Btn.className = "flex-1 py-2 px-3 rounded-xl border-2 border-cyan-400 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2 cursor-pointer";
+      selectColor2Btn.className = "flex-1 py-2 px-3 rounded-xl border-2 border-slate-700 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2 cursor-pointer";
       paletteLabel.textContent = "Wähle die 1. Farbe (Kopf):";
       paletteLabel.className = "text-[11px] font-bold text-cyan-300 block mb-2";
     });
 
     selectColor2Btn.addEventListener('click', () => {
       activeColorSlot = 2;
-      selectColor2Btn.className = "flex-1 py-2 px-3 rounded-xl border-2 border-emerald-400 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2";
-      selectColor1Btn.className = "flex-1 py-2 px-3 rounded-xl border-2 border-slate-700 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2";
+      selectColor2Btn.className = "flex-1 py-2 px-3 rounded-xl border-2 border-emerald-400 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2 cursor-pointer";
+      selectColor1Btn.className = "flex-1 py-2 px-3 rounded-xl border-2 border-slate-700 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2 cursor-pointer";
       paletteLabel.textContent = "Wähle die 2. Farbe (Schwanz):";
       paletteLabel.className = "text-[11px] font-bold text-emerald-300 block mb-2";
     });
@@ -412,7 +399,7 @@
       colorPaletteContainer.innerHTML = '';
       FIXED_30_COLORS.forEach(hex => {
         const btn = document.createElement('button');
-        btn.className = "w-8 h-8 rounded-xl border-2 border-slate-700 hover:scale-110 active:scale-95 transition shadow-md";
+        btn.className = "w-8 h-8 rounded-xl border-2 border-slate-700 hover:scale-110 active:scale-95 transition shadow-md cursor-pointer";
         btn.style.backgroundColor = hex;
         btn.addEventListener('click', () => {
           if (activeColorSlot === 1) {
@@ -452,7 +439,7 @@
     recalculateGradient();
 
     // ==========================================
-    // DUNKELBLAUE 3D SKIN PREVIEW (HORIZONTAL & GRÖSSER)
+    // 3D SKIN PREVIEW
     // ==========================================
     let previewRenderer, previewScene, previewCamera, previewAnimId;
     let previewWormSegments = [];
@@ -493,7 +480,6 @@
       for (let i = 0; i < numSegments; i++) {
         const colorHex = playerSegmentColors[i % NUM_CUSTOM_SEGMENTS];
         const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(colorHex), roughness: 0.25 });
-        
         const geo = new THREE.SphereGeometry(0.65, 16, 16);
         const mesh = new THREE.Mesh(geo, mat);
 
@@ -591,7 +577,7 @@
     }
 
     // ==========================================
-    // LEADERBOARD LOGIK (GLOBAL)
+    // LEADERBOARD LOGIK
     // ==========================================
     const lbStatusEl = document.getElementById('lb-status');
     const lbListEl = document.getElementById('leaderboard-list');
@@ -698,6 +684,7 @@
     let foods = [];
     let deathParticles = [];
     let trailParticles = [];
+    let boostVeilParticles = [];
 
     let isBoosting = false;
     let lastBoostSegmentDropTime = 0;
@@ -762,7 +749,6 @@
 
       scene = new THREE.Scene();
       scene.background = new THREE.Color("#4ade80");
-      scene.fog = null;
 
       camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 300);
       camera.position.set(0, 45, 0);
@@ -803,7 +789,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    // WURM KLASSE WITH DYNAMISCHEN AUGEN & BOOST SCHLEIER
+    // WURM KLASSE
     class Worm {
       constructor(isPlayer = false, name = "Bot", color = "#1982c4", startX = 0, startZ = 0) {
         this.isPlayer = isPlayer;
@@ -820,9 +806,7 @@
         scene.add(this.meshGroup);
 
         const headColorHex = isPlayer ? playerSegmentColors[0] : color;
-        const headMat = isPlayer 
-          ? new THREE.MeshStandardMaterial({ color: new THREE.Color(headColorHex), roughness: 0.3 })
-          : new THREE.MeshStandardMaterial({ color: new THREE.Color(color), roughness: 0.2 });
+        const headMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(headColorHex), roughness: 0.3 });
 
         const headGeo = new THREE.SphereGeometry(0.5, 16, 16);
         const headMesh = new THREE.Mesh(headGeo, headMat);
@@ -952,8 +936,6 @@
           this.pathHistory.length = maxHistoryNeeded;
         }
 
-        this.updateEyes(currentSpeed);
-
         if (this.isPlayer && Math.random() < 0.3) {
           spawnTrailParticle(head.position.x, head.position.z, playerSegmentColors[0]);
         }
@@ -969,28 +951,6 @@
             this.die();
             return;
           }
-        }
-      }
-
-      updateEyes(currentSpeed) {
-        const head = this.segments[0];
-        const nearBorder = Math.abs(head.position.x) > ARENA_SIZE - 8 || Math.abs(head.position.z) > ARENA_SIZE - 8;
-
-        if (nearBorder) {
-          this.eyeLeft.scale.set(1.4, 1.4, 1.4);
-          this.eyeRight.scale.set(1.4, 1.4, 1.4);
-          this.pupilLeft.scale.set(0.6, 0.6, 0.6);
-          this.pupilRight.scale.set(0.6, 0.6, 0.6);
-        } else if (currentSpeed > BASE_SPEED) {
-          this.eyeLeft.scale.set(0.9, 0.9, 0.9);
-          this.eyeRight.scale.set(0.9, 0.9, 0.9);
-          this.pupilLeft.scale.set(0.4, 0.4, 0.4);
-          this.pupilRight.scale.set(0.4, 0.4, 0.4);
-        } else {
-          this.eyeLeft.scale.set(1, 1, 1);
-          this.eyeRight.scale.set(1, 1, 1);
-          this.pupilLeft.scale.set(1, 1, 1);
-          this.pupilRight.scale.set(1, 1, 1);
         }
       }
 
@@ -1018,7 +978,6 @@
         const pGeo = new THREE.SphereGeometry(0.18, 8, 8);
         const pMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(colorHex), transparent: true, opacity: 0.8 });
         const pMesh = new THREE.Mesh(pGeo, pMat);
-
         pMesh.position.set(x, 0.5, z);
         pMesh.userData = {
           vx: (Math.random() - 0.5) * 0.1,
@@ -1040,8 +999,6 @@
       scene.add(pMesh);
       trailParticles.push(pMesh);
     }
-
-    let boostVeilParticles = [];
 
     function spawnBoostVeilParticle(x, z, colorHex) {
       const pGeo = new THREE.SphereGeometry(0.28, 8, 8);
@@ -1084,7 +1041,7 @@
 
     window.addEventListener('pointerdown', (e) => {
       if (!isPlaying) return;
-      if (e.target.closest('#boost-btn') || e.target.closest('#settings-btn')) return;
+      if (e.target.closest('#boost-btn') || e.target.closest('#settings-btn') || e.target.closest('#open-skin-btn')) return;
       if (moveTouchId !== null) return;
 
       initAudio();
@@ -1144,49 +1101,14 @@
       boostIndicator.classList.add('hidden');
     }
 
-    boostBtn.addEventListener('pointerdown', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      startBoost();
-    });
+    boostBtn.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); startBoost(); });
+    boostBtn.addEventListener('pointerup', (e) => { e.stopPropagation(); e.preventDefault(); stopBoost(); });
+    boostBtn.addEventListener('pointercancel', (e) => { e.stopPropagation(); e.preventDefault(); stopBoost(); });
 
-    boostBtn.addEventListener('pointerup', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      stopBoost();
-    });
+    window.addEventListener('keydown', (e) => { if (e.code === 'Space' && isPlaying) startBoost(); });
+    window.addEventListener('keyup', (e) => { if (e.code === 'Space') stopBoost(); });
 
-    boostBtn.addEventListener('pointercancel', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      stopBoost();
-    });
-
-    boostBtn.addEventListener('touchstart', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      startBoost();
-    }, { passive: false });
-
-    boostBtn.addEventListener('touchend', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      stopBoost();
-    }, { passive: false });
-
-    window.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' && isPlaying) {
-        startBoost();
-      }
-    });
-
-    window.addEventListener('keyup', (e) => {
-      if (e.code === 'Space') {
-        stopBoost();
-      }
-    });
-
-    // UPDATING LIVE RANGLISTE
+    // LIVE RANGLISTE UPDATEN
     const liveLeaderboardEl = document.getElementById('live-leaderboard');
 
     function updateLiveMatchLeaderboard() {
@@ -1200,9 +1122,7 @@
       allWorms.slice(0, 5).forEach((w, idx) => {
         const li = document.createElement('li');
         li.className = "flex justify-between items-center";
-        
         const mainColor = w.isPlayer ? playerSegmentColors[0] : w.color;
-        
         li.innerHTML = `
           <span class="truncate max-w-[85px]" style="color: ${mainColor}">${escapeHtml(w.name)}</span>
           <span class="text-white font-black">${Math.floor(w.score)}</span>
@@ -1211,7 +1131,7 @@
       });
     }
 
-    // GAME ANIMATION LOOP
+    // GAME LOOP
     function animate() {
       if (!isPlaying) return;
 
@@ -1223,12 +1143,10 @@
         if (isBoosting) {
           if (player.score >= 10) {
             currentSpeed = BASE_SPEED * 1.8;
-
             const now = Date.now();
             if (now - lastBoostSegmentDropTime > 400) {
               lastBoostSegmentDropTime = now;
               player.score = Math.max(0, player.score - 2);
-              
               player.syncSegmentsWithScore();
               document.getElementById('score-val').textContent = player.score;
             }
@@ -1245,7 +1163,6 @@
         camera.position.x = head.position.x;
         camera.position.z = head.position.z;
         camera.position.y += (targetCamY - camera.position.y) * 0.05;
-
         camera.lookAt(head.position.x, 0, head.position.z);
 
         // Futter fressen
@@ -1253,15 +1170,12 @@
           const f = foods[i];
           if (head.position.distanceTo(f.position) < 0.8) {
             const rawPoints = f.userData.points || 1;
-
             scene.remove(f);
             foods.splice(i, 1);
             player.score += rawPoints;
             playPopSound();
-
             player.syncSegmentsWithScore();
             document.getElementById('score-val').textContent = player.score;
-            
             if (Math.random() < 0.7) spawnFood();
           }
         }
@@ -1288,13 +1202,11 @@
       // Bots Update
       bots.forEach(bot => {
         if (bot.isDead) return;
-
         if (Math.random() < 0.02) bot.targetDir += (Math.random() - 0.5) * 1.5;
         const bHead = bot.segments[0];
         if (Math.abs(bHead.position.x) > ARENA_SIZE - 3 || Math.abs(bHead.position.z) > ARENA_SIZE - 3) {
           bot.targetDir = Math.atan2(-bHead.position.x, -bHead.position.z);
         }
-
         bot.update(BASE_SPEED);
 
         for (let i = foods.length - 1; i >= 0; i--) {
@@ -1317,7 +1229,7 @@
         bots.push(new Worm(false, bName, color, bx, bz));
       }
 
-      // Death Partikel Update
+      // Partikel-Updates
       for (let i = deathParticles.length - 1; i >= 0; i--) {
         const p = deathParticles[i];
         p.position.x += p.userData.vx;
@@ -1325,41 +1237,26 @@
         p.position.z += p.userData.vz;
         p.userData.life -= 0.02;
         p.material.opacity = p.userData.life;
-
-        if (p.userData.life <= 0) {
-          scene.remove(p);
-          deathParticles.splice(i, 1);
-        }
+        if (p.userData.life <= 0) { scene.remove(p); deathParticles.splice(i, 1); }
       }
 
-      // Trail Partikel Update
       for (let i = trailParticles.length - 1; i >= 0; i--) {
         const p = trailParticles[i];
         p.userData.life -= 0.04;
         p.material.opacity = p.userData.life;
         p.scale.multiplyScalar(0.96);
-
-        if (p.userData.life <= 0) {
-          scene.remove(p);
-          trailParticles.splice(i, 1);
-        }
+        if (p.userData.life <= 0) { scene.remove(p); trailParticles.splice(i, 1); }
       }
 
-      // Boost Schleier Partikel Update
       for (let i = boostVeilParticles.length - 1; i >= 0; i--) {
         const p = boostVeilParticles[i];
         p.userData.life -= 0.05;
         p.material.opacity = p.userData.life;
         p.scale.multiplyScalar(0.95);
-
-        if (p.userData.life <= 0) {
-          scene.remove(p);
-          boostVeilParticles.splice(i, 1);
-        }
+        if (p.userData.life <= 0) { scene.remove(p); boostVeilParticles.splice(i, 1); }
       }
 
       updateLiveMatchLeaderboard();
-
       renderer.render(scene, camera);
     }
 
@@ -1405,6 +1302,7 @@
       boostBtn.classList.remove('hidden');
 
       isPlaying = true;
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
       animate();
     }
 
@@ -1435,6 +1333,7 @@
       document.getElementById('start-menu').classList.remove('hidden');
     });
 
+    // Initialisierung beim Laden
     initThree();
     loadLeaderboard();
   </script>
