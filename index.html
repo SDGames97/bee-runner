@@ -4,1338 +4,531 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
   <title>WORMRING 3D</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <!-- Three.js Bibliothek -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <style>
-    body, html {
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body, html {
       width: 100%;
       height: 100%;
       overflow: hidden;
-      user-select: none;
-      -webkit-user-select: none;
+      background-color: #0f172a;
+      color: #ffffff;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       touch-action: none;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     #game-canvas {
       width: 100%;
       height: 100%;
       display: block;
     }
-    .custom-scroll::-webkit-scrollbar {
-      height: 6px;
-      width: 6px;
+    
+    /* MODALS & OVERLAYS */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background-color: rgba(2, 6, 23, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 20;
     }
-    .custom-scroll::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.6);
-      border-radius: 8px;
+    .hidden {
+      display: none !important;
     }
-    .custom-scroll::-webkit-scrollbar-thumb {
+    .card {
+      background-color: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    
+    /* BUTTONS */
+    .btn {
+      width: 100%;
+      padding: 0.875rem;
+      border-radius: 1rem;
+      border: none;
+      font-weight: 900;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.1s, background-color 0.2s;
+    }
+    .btn:active {
+      transform: scale(0.96);
+    }
+    .btn-primary {
+      background: linear-gradient(to right, #06b6d4, #10b981);
+      color: white;
+      box-shadow: 0 10px 15px -3px rgba(6, 182, 212, 0.3);
+    }
+    .btn-secondary {
+      background-color: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #334155;
+    }
+    .btn-purple {
+      background: linear-gradient(to right, #9333ea, #4f46e5);
+      color: white;
+    }
+    .btn-boost {
+      background: linear-gradient(to right, #f59e0b, #ea580c);
+      color: white;
+      border: 2px solid #fde047;
+      box-shadow: 0 10px 20px rgba(245, 158, 11, 0.4);
+    }
+
+    /* INPUTS */
+    .input-field {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background-color: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 0.75rem;
+      color: white;
+      font-weight: bold;
+      margin-bottom: 1rem;
+      outline: none;
+    }
+    .input-field:focus {
+      border-color: #06b6d4;
+    }
+
+    /* HUD */
+    #hud {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      right: 1rem;
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .score-box {
+      background-color: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(4px);
+      padding: 0.6rem 1.2rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      font-weight: bold;
+    }
+
+    /* JOYSTICK & BOOST */
+    #joystick-container {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      pointer-events: none;
+    }
+    #joystick-base {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      border: 2px solid rgba(255,255,255,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #joystick-stick {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
       background: #06b6d4;
+      border: 2px solid white;
+    }
+    #boost-btn {
+      position: absolute;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 15;
+      width: auto;
+      padding: 1rem 1.5rem;
+    }
+
+    /* GRID PALETTE */
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.5rem;
+      max-height: 120px;
+      overflow-y: auto;
+      margin-top: 0.5rem;
+    }
+    .color-btn {
+      height: 32px;
       border-radius: 8px;
+      border: 2px solid #334155;
+      cursor: pointer;
     }
   </style>
 </head>
-<body class="bg-slate-900 text-white">
+<body>
 
   <canvas id="game-canvas"></canvas>
 
-  <button id="settings-btn" class="absolute top-4 right-4 z-10 bg-slate-800/80 hover:bg-slate-700/80 backdrop-blur-md p-3 rounded-2xl shadow-lg border border-slate-600 text-xl transition active:scale-90 cursor-pointer">
-    ⚙️
-  </button>
+  <!-- EINSTELLUNGEN BUTTON -->
+  <button id="settings-btn" style="position: absolute; top: 1rem; right: 1rem; z-index: 10; background: #1e293b; border: 1px solid #475569; color: white; padding: 0.6rem 0.8rem; border-radius: 1rem; cursor: pointer;">⚙️</button>
 
-  <div id="joystick-container" class="absolute pointer-events-none hidden" style="transform: translate(-50%, -50%); z-index: 10;">
-    <div id="joystick-base" class="w-24 h-24 rounded-full bg-white/20 border-2 border-white/50 backdrop-blur-md flex items-center justify-center relative shadow-2xl">
-      <div id="joystick-stick" class="w-10 h-10 rounded-full bg-cyan-400 border-2 border-white shadow-lg transition-transform duration-75"></div>
+  <!-- JOYSTICK -->
+  <div id="joystick-container" class="hidden">
+    <div id="joystick-base">
+      <div id="joystick-stick"></div>
     </div>
   </div>
 
-  <!-- HUD MIT PUNKTEN & LIVE RANGLISTE -->
-  <div id="hud" class="absolute top-4 left-4 right-20 flex justify-between items-start pointer-events-none hidden z-10">
-    <div class="bg-slate-900/80 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-lg border border-cyan-500/30 text-white font-bold text-base md:text-lg flex items-center gap-3">
-      <span>🌟 Punkte:</span> <span id="score-val" class="text-cyan-400 text-xl">0</span>
-      <span id="boost-indicator" class="hidden text-xs bg-amber-500/30 border border-amber-400 text-amber-300 px-2.5 py-0.5 rounded-full animate-pulse">BOOST!</span>
-    </div>
-
-    <!-- LIVE INGAME RANGLISTE (TOP 5) -->
-    <div class="bg-slate-950/40 backdrop-blur-sm p-2.5 rounded-xl shadow-lg border border-slate-800/60 w-36 pointer-events-auto">
-      <div class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-        🏆 Top 5
-      </div>
-      <ol id="live-leaderboard" class="text-[11px] font-bold space-y-0.5">
-        <!-- Dynamische Einträge -->
-      </ol>
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div class="score-box">
+      <span>🌟 Punkte:</span> <span id="score-val" style="color: #06b6d4;">0</span>
     </div>
   </div>
 
   <!-- BOOST BUTTON -->
-  <button id="boost-btn" class="absolute bottom-8 right-8 z-20 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-black px-6 py-4 rounded-3xl shadow-2xl border-2 border-amber-300 text-lg transition active:scale-95 flex items-center gap-2 hidden touch-none select-none cursor-pointer">
-    ⚡ BOOST
-  </button>
+  <button id="boost-btn" class="btn btn-boost hidden">⚡ BOOST</button>
 
   <!-- STARTMENÜ -->
-  <div id="start-menu" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-20">
-    <div class="bg-slate-900/95 p-6 rounded-3xl shadow-2xl border border-cyan-500/30 max-w-md w-full text-center relative overflow-hidden flex flex-col justify-between">
-      
-      <div>
-        <h1 class="text-4xl font-black text-cyan-400 drop-shadow-[0_2px_10px_rgba(34,211,238,0.8)] tracking-wide mb-1">🐛 WORMRING</h1>
-        <p class="text-slate-400 text-xs mb-5">Vogelperspektive Edition – Passe deinen Wurm im Skin-Menü an!</p>
+  <div id="start-menu" class="overlay">
+    <div class="card">
+      <h1 style="color: #06b6d4; font-size: 2rem; font-weight: 900; margin-bottom: 0.5rem;">🐛 WORMRING 3D</h1>
+      <p style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 1.5rem;">Steuere deinen Wurm und sammle Punkte!</p>
 
-        <div class="mb-4 text-left">
-          <label for="player-name" class="block text-xs font-bold text-cyan-300 uppercase mb-1">Dein Spielername</label>
-          <input type="text" id="player-name" placeholder="SpaceWorm" maxlength="15" class="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-cyan-400 text-white font-bold text-base transition">
-        </div>
-
-        <button id="start-btn" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 active:scale-95 text-white font-black text-lg rounded-2xl shadow-lg shadow-cyan-500/25 transition duration-150 mb-3 cursor-pointer">
-          SPIEL STARTEN ▶
-        </button>
-
-        <div class="flex justify-between gap-2 mb-4">
-          <button id="open-skin-btn" class="flex-1 py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black rounded-xl border border-purple-400/30 shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
-            🎨 SKINS
-          </button>
-          <button id="open-menu-settings-btn" class="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer">
-            ⚙️ Einstellungen
-          </button>
-        </div>
+      <div style="text-align: left; margin-bottom: 0.5rem;">
+        <label style="font-size: 0.75rem; color: #67e8f9; font-weight: bold; display: block; margin-bottom: 0.25rem;">SPIELERNAME</label>
+        <input type="text" id="player-name" class="input-field" value="SpaceWorm" maxlength="15">
       </div>
 
-      <div class="border-t border-slate-800 pt-3 text-left">
-        <div class="flex justify-between items-center mb-2">
-          <h2 class="text-xs font-bold text-slate-400 uppercase flex items-center gap-1">🏆 Top Highscores</h2>
-          <span id="lb-status" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold">Online</span>
-        </div>
-        <div class="bg-slate-800/50 rounded-2xl p-2.5 border border-slate-800 max-h-28 overflow-y-auto custom-scroll">
-          <ol id="leaderboard-list" class="text-xs font-semibold text-slate-300 divide-y divide-slate-800/50">
-            <li class="py-2 text-center text-slate-500 italic">Lade Bestenliste...</li>
-          </ol>
-        </div>
+      <button id="start-btn" class="btn btn-primary" style="margin-bottom: 0.75rem;">SPIEL STARTEN ▶</button>
+      
+      <div style="display: flex; gap: 0.5rem;">
+        <button id="open-skin-btn" class="btn btn-purple" style="font-size: 0.8rem;">🎨 Skins</button>
+        <button id="open-settings-btn" class="btn btn-secondary" style="font-size: 0.8rem;">⚙️ Option</button>
       </div>
     </div>
   </div>
 
   <!-- SKIN MODAL -->
-  <div id="skin-modal" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-40 hidden">
-    <div class="bg-slate-900 p-5 rounded-3xl border border-purple-500/40 max-w-lg w-full text-center shadow-2xl flex flex-col max-h-[95vh]">
-      
-      <div class="flex justify-between items-center mb-2">
-        <h2 class="text-2xl font-black text-purple-400 flex items-center gap-2">🎨 Skin Menü</h2>
-        <button id="close-skin-btn" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white font-bold flex items-center justify-center cursor-pointer">✕</button>
+  <div id="skin-modal" class="overlay hidden">
+    <div class="card" style="border-color: rgba(147, 51, 234, 0.4);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
+        <h2 style="color: #c084fc; font-weight: 900;">🎨 Skin Farbe</h2>
+        <button id="close-skin-btn" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer;">✕</button>
       </div>
 
-      <div class="w-full h-20 bg-slate-950 rounded-2xl mb-3 relative overflow-hidden border border-blue-900/60 shadow-inner">
-        <canvas id="skin-preview-canvas" class="w-full h-full block"></canvas>
-        <span class="absolute bottom-1 right-2 text-[8px] font-bold text-blue-300 bg-slate-900/80 px-1.5 py-0.5 rounded border border-blue-800/50">3D Vorschau</span>
+      <div style="background:#020617; border-radius:1rem; height:80px; margin-bottom:1rem; overflow:hidden;">
+        <canvas id="skin-preview-canvas" style="width:100%; height:100%;"></canvas>
       </div>
 
-      <div class="flex gap-2 mb-3 border-b border-slate-800 pb-2">
-        <button id="tab-presets-btn" class="flex-1 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white transition cursor-pointer">Voreingestellte Skins</button>
-        <button id="tab-custom-btn" class="flex-1 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 transition cursor-pointer">Farbverlauf Erstellen</button>
+      <div style="text-align:left; margin-bottom: 1rem;">
+        <span style="font-size: 0.75rem; color: #67e8f9; font-weight: bold;">WÄHLE EINE FARBE:</span>
+        <div id="color-palette" class="color-grid"></div>
       </div>
 
-      <!-- PRESET SKINS -->
-      <div id="tab-presets-content" class="overflow-y-auto pr-1 space-y-2 text-left custom-scroll mb-3 max-h-[40vh]">
-        <div class="grid grid-cols-2 gap-2">
-          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left cursor-pointer" data-color1="#06b6d4" data-color2="#3b82f6">
-            <span class="block text-xs font-bold text-cyan-400 mb-1">Cyber Neon</span>
-            <div class="h-3 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500"></div>
-          </button>
-          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left cursor-pointer" data-color1="#ef4444" data-color2="#eab308">
-            <span class="block text-xs font-bold text-amber-400 mb-1">Feuerdrache</span>
-            <div class="h-3 rounded-full bg-gradient-to-r from-red-500 to-yellow-500"></div>
-          </button>
-          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left cursor-pointer" data-color1="#22c55e" data-color2="#10b981">
-            <span class="block text-xs font-bold text-emerald-400 mb-1">Waldmeister</span>
-            <div class="h-3 rounded-full bg-gradient-to-r from-green-500 to-emerald-400"></div>
-          </button>
-          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left cursor-pointer" data-color1="#a855f7" data-color2="#ec4899">
-            <span class="block text-xs font-bold text-pink-400 mb-1">Glow Worm</span>
-            <div class="h-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"></div>
-          </button>
-          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left col-span-2 cursor-pointer" data-rainbow="true">
-            <span class="block text-xs font-bold text-yellow-300 mb-1">Regenbogen Express</span>
-            <div class="h-3 rounded-full bg-gradient-to-r from-red-500 via-green-500 via-blue-500 to-purple-500"></div>
-          </button>
-        </div>
-      </div>
-
-      <!-- FARBVERLAUF -->
-      <div id="tab-custom-content" class="hidden overflow-y-auto pr-1 space-y-3 text-left custom-scroll mb-3 max-h-[40vh]">
-        <div class="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/80">
-          <div class="flex gap-2 mb-3">
-            <button id="select-color1-btn" class="flex-1 py-2 px-3 rounded-xl border-2 border-cyan-400 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2 cursor-pointer">
-              <span id="color1-preview" class="w-4 h-4 rounded-full border border-white" style="background:#06b6d4"></span>
-              1. Farbe (Kopf)
-            </button>
-            <button id="select-color2-btn" class="flex-1 py-2 px-3 rounded-xl border-2 border-slate-700 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2 cursor-pointer">
-              <span id="color2-preview" class="w-4 h-4 rounded-full border border-white" style="background:#10b981"></span>
-              2. Farbe (Schwanz)
-            </button>
-          </div>
-          <div>
-            <span id="palette-label" class="text-[11px] font-bold text-cyan-300 block mb-2">Wähle die 1. Farbe (Kopf):</span>
-            <div id="color-palette" class="grid grid-cols-6 gap-2 bg-slate-900 p-2.5 rounded-2xl border border-slate-700 max-h-36 overflow-y-auto custom-scroll"></div>
-          </div>
-        </div>
-      </div>
-
-      <button id="save-skin-btn" class="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm rounded-xl transition shadow-lg cursor-pointer">
-        Skin Übernehmen &amp; Schließen
-      </button>
-    </div>
-  </div>
-
-  <!-- EINSTELLUNGEN MODAL -->
-  <div id="settings-modal" class="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
-    <div class="bg-slate-900 p-6 rounded-3xl border border-slate-700 max-w-xs w-full text-center shadow-2xl">
-      <h2 class="text-2xl font-black text-cyan-400 mb-4">Einstellungen</h2>
-      <div class="space-y-4 mb-6 text-left">
-        <div class="flex justify-between items-center bg-slate-800 p-3 rounded-xl border border-slate-700">
-          <span class="text-sm font-bold text-slate-300">🔊 Soundeffekte</span>
-          <input type="checkbox" id="sound-toggle" checked class="w-5 h-5 accent-cyan-500 cursor-pointer">
-        </div>
-        <div class="bg-slate-800 p-3 rounded-xl border border-slate-700">
-          <label for="boost-pos-select" class="block text-xs font-bold text-slate-300 mb-1.5">⚡ Boost-Button Position:</label>
-          <select id="boost-pos-select" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs font-bold text-cyan-300 focus:outline-none focus:border-cyan-400 cursor-pointer">
-            <option value="bottom-right">Unten Rechts (Standard)</option>
-            <option value="bottom-left">Unten Links</option>
-            <option value="top-right">Oben Rechts</option>
-            <option value="top-left">Oben Links</option>
-          </select>
-        </div>
-      </div>
-      <button id="close-settings-btn" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm rounded-xl border border-slate-600 transition cursor-pointer">
-        Schließen
-      </button>
+      <button id="save-skin-btn" class="btn btn-purple">Fertig</button>
     </div>
   </div>
 
   <!-- GAMEOVER MODAL -->
-  <div id="gameover-menu" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-30 hidden">
-    <div class="bg-slate-900 p-6 rounded-3xl shadow-2xl border border-rose-500/40 max-w-sm w-full text-center">
-      <div class="text-5xl mb-2">💥</div>
-      <h2 class="text-3xl font-black text-rose-500 mb-2">Game Over!</h2>
-      <p class="text-slate-400 text-sm mb-4">Du bist zusammengestoßen.</p>
-      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 mb-6">
-        <div class="text-xs text-amber-400 font-bold uppercase mb-1">Erreichte Punkte</div>
-        <div id="final-score" class="text-4xl font-extrabold text-cyan-400">0</div>
+  <div id="gameover-menu" class="overlay hidden">
+    <div class="card" style="border-color: rgba(244, 63, 94, 0.4);">
+      <div style="font-size: 3rem;">💥</div>
+      <h2 style="color: #f43f5e; font-size: 1.8rem; font-weight: 900; margin-bottom: 0.5rem;">Game Over!</h2>
+      <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1rem;">Du bist zusammengestoßen.</p>
+      
+      <div style="background: #1e293b; padding: 1rem; border-radius: 1rem; margin-bottom: 1.5rem;">
+        <div style="color: #fbbf24; font-size: 0.75rem; font-weight: bold;">PUNKTE</div>
+        <div id="final-score" style="color: #06b6d4; font-size: 2.5rem; font-weight: 900;">0</div>
       </div>
-      <button id="restart-btn" class="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 active:scale-95 text-white font-black text-xl rounded-2xl shadow-lg transition cursor-pointer">
-        NOCHMAL SPIELEN 🔄
-      </button>
+
+      <button id="restart-btn" class="btn btn-boost">NOCHMAL SPIELEN 🔄</button>
     </div>
   </div>
 
   <script>
-    // ==========================================
-    // FIREBASE KONFIGURATION
-    // ==========================================
-    const firebaseConfig = {
-      apiKey: "AIzaSyDK77MSnstrk4Q3XW0-Pd7LEMCQuRd1NjM",
-      authDomain: "wormring-16620.firebaseapp.com",
-      projectId: "wormring-16620",
-      storageBucket: "wormring-16620.firebasestorage.app",
-      messagingSenderId: "1066548218415",
-      appId: "1:1066548218415:web:25358a6ab6cda5ce11d4da",
-      measurementId: "G-QQ0CSTRFR9"
-    };
-
-    let db = null;
-    let isFirebaseActive = false;
-
-    try {
-      if (typeof firebase !== 'undefined') {
-        firebase.initializeApp(firebaseConfig);
-        db = firebase.firestore();
-        isFirebaseActive = true;
-      }
-    } catch(e) {
-      console.warn("Firebase Init Hinweis:", e);
+    // PRÜFEN OB THREE.JS GELADEN IST
+    if (typeof THREE === 'undefined') {
+      alert("Fehler: Three.js konnte nicht geladen werden. Bitte überprüfe deine Internetverbindung!");
     }
 
-    // ==========================================
-    // EINSTELLUNGEN LOGIK
-    // ==========================================
-    let soundEnabled = true;
-    const settingsBtn = document.getElementById('settings-btn');
-    const openMenuSettingsBtn = document.getElementById('open-menu-settings-btn');
-    const settingsModal = document.getElementById('settings-modal');
-    const closeSettingsBtn = document.getElementById('close-settings-btn');
-    const soundToggle = document.getElementById('sound-toggle');
+    // FARBEN
+    const COLORS = ["#06b6d4", "#10b981", "#ef4444", "#f59e0b", "#8b5cf6", "#ec4899", "#3b82f6", "#ffffff"];
+    let selectedColor = "#06b6d4";
 
-    const boostBtn = document.getElementById('boost-btn');
-    const boostPosSelect = document.getElementById('boost-pos-select');
-
-    settingsBtn.addEventListener('click', () => settingsModal.classList.remove('hidden'));
-    openMenuSettingsBtn.addEventListener('click', () => settingsModal.classList.remove('hidden'));
-    closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
-    soundToggle.addEventListener('change', (e) => soundEnabled = e.target.checked);
-
-    function updateBoostPosition(pos) {
-      boostBtn.classList.remove('bottom-8', 'right-8', 'left-8', 'top-8', 'top-20');
-      if (pos === 'bottom-left') {
-        boostBtn.classList.add('bottom-8', 'left-8');
-      } else if (pos === 'top-right') {
-        boostBtn.classList.add('top-20', 'right-8');
-      } else if (pos === 'top-left') {
-        boostBtn.classList.add('top-20', 'left-8');
-      } else {
-        boostBtn.classList.add('bottom-8', 'right-8');
-      }
-      localStorage.setItem('worm_boost_pos', pos);
-    }
-
-    boostPosSelect.addEventListener('change', (e) => updateBoostPosition(e.target.value));
-    const savedBoostPos = localStorage.getItem('worm_boost_pos') || 'bottom-right';
-    boostPosSelect.value = savedBoostPos;
-    updateBoostPosition(savedBoostPos);
-
-    // ==========================================
-    // SKIN LOGIK & PALETTE
-    // ==========================================
-    const FIXED_30_COLORS = [
-      "#ffffff", "#000000", "#ef4444", "#f97316", "#f59e0b", "#eab308",
-      "#84cc16", "#22c55e", "#10b981", "#14b8a6", "#06b6d4", "#0ea5e9",
-      "#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#d946ef", "#ec4899",
-      "#f43f5e", "#fb7185", "#38bdf8", "#34d399", "#a3e635", "#fde047",
-      "#fb923c", "#f87171", "#c084fc", "#818cf8", "#94a3b8", "#475569"
-    ];
-
-    const NUM_CUSTOM_SEGMENTS = 20;
-    let selectedColor1 = "#06b6d4";
-    let selectedColor2 = "#10b981";
-    let activeColorSlot = 1;
-    let playerSegmentColors = Array(NUM_CUSTOM_SEGMENTS).fill("#06b6d4");
-
-    function hexToRgb(hex) {
-      hex = hex.replace('#', '');
-      if(hex.length === 3) hex = hex.split('').map(c => c+c).join('');
-      const bigint = parseInt(hex, 16);
-      return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
-    }
-
-    function rgbToHex(r, g, b) {
-      return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-    }
-
-    function recalculateGradient() {
-      const c1 = hexToRgb(selectedColor1);
-      const c2 = hexToRgb(selectedColor2);
-
-      for (let i = 0; i < NUM_CUSTOM_SEGMENTS; i++) {
-        const ratio = i / (NUM_CUSTOM_SEGMENTS - 1);
-        const r = Math.round(c1.r + ratio * (c2.r - c1.r));
-        const g = Math.round(c1.g + ratio * (c2.g - c1.g));
-        const b = Math.round(c1.b + ratio * (c2.b - c1.b));
-        playerSegmentColors[i] = rgbToHex(r, g, b);
-      }
-      updatePreviewSkin();
-    }
-
-    const skinModal = document.getElementById('skin-modal');
-    const openSkinBtn = document.getElementById('open-skin-btn');
-    const closeSkinBtn = document.getElementById('close-skin-btn');
-    const saveSkinBtn = document.getElementById('save-skin-btn');
-
-    const tabPresetsBtn = document.getElementById('tab-presets-btn');
-    const tabCustomBtn = document.getElementById('tab-custom-btn');
-    const tabPresetsContent = document.getElementById('tab-presets-content');
-    const tabCustomContent = document.getElementById('tab-custom-content');
-
-    const selectColor1Btn = document.getElementById('select-color1-btn');
-    const selectColor2Btn = document.getElementById('select-color2-btn');
-    const color1Preview = document.getElementById('color1-preview');
-    const color2Preview = document.getElementById('color2-preview');
-    const paletteLabel = document.getElementById('palette-label');
-    const colorPaletteContainer = document.getElementById('color-palette');
-
-    openSkinBtn.addEventListener('click', () => {
-      skinModal.classList.remove('hidden');
-      initSkinPreview();
-    });
-    closeSkinBtn.addEventListener('click', () => {
-      skinModal.classList.add('hidden');
-      stopSkinPreview();
-    });
-    saveSkinBtn.addEventListener('click', () => {
-      skinModal.classList.add('hidden');
-      stopSkinPreview();
-    });
-
-    tabPresetsBtn.addEventListener('click', () => {
-      tabPresetsContent.classList.remove('hidden');
-      tabCustomContent.classList.add('hidden');
-      tabPresetsBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white transition cursor-pointer";
-      tabCustomBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 transition cursor-pointer";
-    });
-
-    tabCustomBtn.addEventListener('click', () => {
-      tabCustomContent.classList.remove('hidden');
-      tabPresetsContent.classList.add('hidden');
-      tabCustomBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white transition cursor-pointer";
-      tabPresetsBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 transition cursor-pointer";
-    });
-
-    selectColor1Btn.addEventListener('click', () => {
-      activeColorSlot = 1;
-      selectColor1Btn.className = "flex-1 py-2 px-3 rounded-xl border-2 border-cyan-400 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2 cursor-pointer";
-      selectColor2Btn.className = "flex-1 py-2 px-3 rounded-xl border-2 border-slate-700 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2 cursor-pointer";
-      paletteLabel.textContent = "Wähle die 1. Farbe (Kopf):";
-      paletteLabel.className = "text-[11px] font-bold text-cyan-300 block mb-2";
-    });
-
-    selectColor2Btn.addEventListener('click', () => {
-      activeColorSlot = 2;
-      selectColor2Btn.className = "flex-1 py-2 px-3 rounded-xl border-2 border-emerald-400 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2 cursor-pointer";
-      selectColor1Btn.className = "flex-1 py-2 px-3 rounded-xl border-2 border-slate-700 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2 cursor-pointer";
-      paletteLabel.textContent = "Wähle die 2. Farbe (Schwanz):";
-      paletteLabel.className = "text-[11px] font-bold text-emerald-300 block mb-2";
-    });
-
-    function render30ColorPalette() {
-      colorPaletteContainer.innerHTML = '';
-      FIXED_30_COLORS.forEach(hex => {
-        const btn = document.createElement('button');
-        btn.className = "w-8 h-8 rounded-xl border-2 border-slate-700 hover:scale-110 active:scale-95 transition shadow-md cursor-pointer";
-        btn.style.backgroundColor = hex;
-        btn.addEventListener('click', () => {
-          if (activeColorSlot === 1) {
-            selectedColor1 = hex;
-            color1Preview.style.backgroundColor = hex;
-          } else {
-            selectedColor2 = hex;
-            color2Preview.style.backgroundColor = hex;
-          }
-          recalculateGradient();
-        });
-        colorPaletteContainer.appendChild(btn);
-      });
-    }
-
-    document.querySelectorAll('.preset-skin-card').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const isRainbow = btn.dataset.rainbow === 'true';
-        if (isRainbow) {
-          for(let i = 0; i < NUM_CUSTOM_SEGMENTS; i++) {
-            const hue = (i / NUM_CUSTOM_SEGMENTS) * 360;
-            playerSegmentColors[i] = `hsl(${hue}, 90%, 55%)`;
-          }
-        } else {
-          selectedColor1 = btn.dataset.color1 || "#06b6d4";
-          selectedColor2 = btn.dataset.color2 || "#10b981";
-          color1Preview.style.backgroundColor = selectedColor1;
-          color2Preview.style.backgroundColor = selectedColor2;
-          recalculateGradient();
-          return;
-        }
-        updatePreviewSkin();
-      });
-    });
-
-    render30ColorPalette();
-    recalculateGradient();
-
-    // ==========================================
-    // 3D SKIN PREVIEW
-    // ==========================================
-    let previewRenderer, previewScene, previewCamera, previewAnimId;
-    let previewWormSegments = [];
-
-    function initSkinPreview() {
-      const pCanvas = document.getElementById('skin-preview-canvas');
-      const w = pCanvas.clientWidth || 400;
-      const h = pCanvas.clientHeight || 80;
-
-      if (!previewRenderer) {
-        previewRenderer = new THREE.WebGLRenderer({ canvas: pCanvas, antialias: true, alpha: true });
-      }
-      previewRenderer.setSize(w, h);
-
-      previewScene = new THREE.Scene();
-      previewScene.background = new THREE.Color("#090d16");
-
-      previewCamera = new THREE.PerspectiveCamera(38, w / h, 0.1, 100);
-      previewCamera.position.set(0, 0, 8.5);
-      previewCamera.lookAt(0, 0, 0);
-
-      const amb = new THREE.AmbientLight(0xffffff, 0.95);
-      previewScene.add(amb);
-      const dir = new THREE.DirectionalLight(0x93c5fd, 0.8);
-      dir.position.set(2, 6, 8);
-      previewScene.add(dir);
-
-      createPreviewWorm();
-      animateSkinPreview();
-    }
-
-    function createPreviewWorm() {
-      if (!previewScene) return;
-      previewWormSegments.forEach(s => previewScene.remove(s));
-      previewWormSegments = [];
-
-      const numSegments = 10;
-      for (let i = 0; i < numSegments; i++) {
-        const colorHex = playerSegmentColors[i % NUM_CUSTOM_SEGMENTS];
-        const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(colorHex), roughness: 0.25 });
-        const geo = new THREE.SphereGeometry(0.65, 16, 16);
-        const mesh = new THREE.Mesh(geo, mat);
-
-        if (i === 0) {
-          const eyeGeo = new THREE.SphereGeometry(0.15, 8, 8);
-          const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-          const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-
-          const eyeLeft = new THREE.Mesh(eyeGeo, eyeMat);
-          eyeLeft.position.set(0.35, 0.28, 0.35);
-          mesh.add(eyeLeft);
-          const pupilLeft = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), pupilMat);
-          pupilLeft.position.set(0.08, 0, 0.05);
-          eyeLeft.add(pupilLeft);
-
-          const eyeRight = new THREE.Mesh(eyeGeo, eyeMat);
-          eyeRight.position.set(0.35, -0.28, 0.35);
-          mesh.add(eyeRight);
-          const pupilRight = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), pupilMat);
-          pupilRight.position.set(0.08, 0, 0.05);
-          eyeRight.add(pupilRight);
-        }
-
-        previewScene.add(mesh);
-        previewWormSegments.push(mesh);
-      }
-    }
-
-    function updatePreviewSkin() {
-      if (previewScene) createPreviewWorm();
-    }
-
-    function animateSkinPreview() {
-      previewAnimId = requestAnimationFrame(animateSkinPreview);
-      const time = Date.now() * 0.0035;
-
-      previewWormSegments.forEach((seg, i) => {
-        const x = (4 - i) * 0.72;
-        const y = Math.sin(time - i * 0.4) * 0.55;
-        seg.position.set(x, y, 0);
-      });
-
-      if (previewRenderer && previewScene && previewCamera) {
-        previewRenderer.render(previewScene, previewCamera);
-      }
-    }
-
-    function stopSkinPreview() {
-      if (previewAnimId) cancelAnimationFrame(previewAnimId);
-    }
-
-    // ==========================================
-    // AUDIO SYNTHESIZER
-    // ==========================================
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    let audioCtx = null;
-
-    function initAudio() {
-      if (!audioCtx) audioCtx = new AudioCtx();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-    }
-
-    function playPopSound() {
-      if (!soundEnabled || !audioCtx) return;
-      try {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(450, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.08);
-        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.08);
-      } catch(e){}
-    }
-
-    function playHitSound() {
-      if (!soundEnabled || !audioCtx) return;
-      try {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(160, audioCtx.currentTime);
-        osc.frequency.linearRampToValueAtTime(30, audioCtx.currentTime + 0.25);
-        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.25);
-      } catch(e){}
-    }
-
-    // ==========================================
-    // LEADERBOARD LOGIK
-    // ==========================================
-    const lbStatusEl = document.getElementById('lb-status');
-    const lbListEl = document.getElementById('leaderboard-list');
-
-    function updateLBStatus(online) {
-      if (online) {
-        lbStatusEl.textContent = "Online Cloud";
-        lbStatusEl.className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold";
-      } else {
-        lbStatusEl.textContent = "Lokal";
-        lbStatusEl.className = "text-[10px] px-2 py-0.5 rounded-full bg-amber-950 text-amber-400 border border-amber-800 font-bold";
-      }
-    }
-
-    function loadLeaderboard() {
-      if (isFirebaseActive && db) {
-        db.collection("leaderboard")
-          .orderBy("score", "desc")
-          .limit(10)
-          .onSnapshot((snapshot) => {
-            updateLBStatus(true);
-            const scores = [];
-            snapshot.forEach(doc => scores.push(doc.data()));
-            renderLeaderboardUI(scores);
-          }, (err) => {
-            loadLocalLeaderboard();
-          });
-      } else {
-        loadLocalLeaderboard();
-      }
-    }
-
-    function loadLocalLeaderboard() {
-      updateLBStatus(false);
-      const local = JSON.parse(localStorage.getItem('worm_scores') || '[]');
-      renderLeaderboardUI(local);
-    }
-
-    function renderLeaderboardUI(scores) {
-      lbListEl.innerHTML = '';
-      if (!scores || scores.length === 0) {
-        lbListEl.innerHTML = '<li class="py-2 text-center text-slate-500 italic">Noch keine Highscores vorhanden</li>';
-        return;
-      }
-      scores.slice(0, 10).forEach((entry, idx) => {
-        const li = document.createElement('li');
-        li.className = "py-1.5 flex justify-between items-center font-semibold";
-        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
-        li.innerHTML = `
-          <span class="flex items-center gap-2">
-            <span class="w-5 text-center font-bold text-slate-500 text-[10px]">${medal}</span>
-            <span class="text-slate-200">${escapeHtml(entry.name || 'Anonym')}</span>
-          </span>
-          <span class="text-cyan-400 font-black">${Math.floor(entry.score || 0)}</span>
-        `;
-        lbListEl.appendChild(li);
-      });
-    }
-
-    async function saveScore(name, score) {
-      const cleanScore = Math.floor(score);
-      const cleanName = name.trim() || 'WurmPlayer';
-
-      const local = JSON.parse(localStorage.getItem('worm_scores') || '[]');
-      local.push({ name: cleanName, score: cleanScore, date: new Date().toISOString() });
-      local.sort((a,b) => b.score - a.score);
-      localStorage.setItem('worm_scores', JSON.stringify(local.slice(0, 20)));
-
-      if (isFirebaseActive && db) {
-        try {
-          await db.collection("leaderboard").add({
-            name: cleanName,
-            score: cleanScore,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-        } catch(e){}
-      }
-    }
-
-    function escapeHtml(str) {
-      return str.replace(/[&<>"']/g, function(m) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
-      });
-    }
-
-    const nameInput = document.getElementById('player-name');
-    nameInput.value = localStorage.getItem('worm_player_name') || 'Wurm' + Math.floor(Math.random()*1000);
-
-    // ==========================================
-    // THREE.JS & SPIEL ENGINES
-    // ==========================================
-    const canvas = document.getElementById('game-canvas');
-    let renderer, scene, camera;
+    // THREE.JS VARIABLE
+    let scene, camera, renderer;
     let isPlaying = false;
-    let animationFrameId = null;
-
-    const BASE_SPEED = 0.085; 
-    const SEGMENT_DISTANCE = 0.42;
-    const MAX_TURN_SPEED = 0.07;
-    const ARENA_SIZE = 80;
+    let animId = null;
 
     let player;
-    let bots = [];
     let foods = [];
-    let deathParticles = [];
-    let trailParticles = [];
-    let boostVeilParticles = [];
+    let bots = [];
+    const ARENA_SIZE = 60;
 
-    let isBoosting = false;
-    let lastBoostSegmentDropTime = 0;
+    // PALETTE RENDERN
+    const paletteContainer = document.getElementById('color-palette');
+    COLORS.forEach(hex => {
+      const b = document.createElement('div');
+      b.className = 'color-btn';
+      b.style.backgroundColor = hex;
+      b.onclick = () => { selectedColor = hex; initPreview(); };
+      paletteContainer.appendChild(b);
+    });
 
-    const BOT_NAMES = ["Alpha", "Vortex", "SlitherX", "Shadow", "NeonBug", "Viper", "Omega", "Phantom"];
-    const BOT_COLORS = ["#ff595e", "#8ac926", "#6a4c93", "#ffca3a", "#ff924c"];
+    // 3D PREVIEW IM SKIN MENÜ
+    let pScene, pCam, pRen;
+    function initPreview() {
+      const pCanvas = document.getElementById('skin-preview-canvas');
+      if(!pRen) pRen = new THREE.WebGLRenderer({ canvas: pCanvas, antialias: true, alpha: true });
+      pRen.setSize(pCanvas.clientWidth, pCanvas.clientHeight);
+      
+      pScene = new THREE.Scene();
+      pCam = new THREE.PerspectiveCamera(40, pCanvas.clientWidth / pCanvas.clientHeight, 0.1, 10);
+      pCam.position.z = 3;
 
-    const BOOST_VEIL_COLORS = [
-      0x00ffff, 0xff00ff, 0xffff00, 0x00ff00, 0xff3366,
-      0x9933ff, 0xff6600, 0x00ffff, 0x33ff99, 0xffffff
-    ];
+      const light = new THREE.AmbientLight(0xffffff, 1);
+      pScene.add(light);
 
-    function createRugTexture() {
-      const canvas = document.createElement('canvas');
-      canvas.width = 512;
-      canvas.height = 512;
-      const ctx = canvas.getContext('2d');
+      const geo = new THREE.SphereGeometry(0.8, 16, 16);
+      const mat = new THREE.MeshBasicMaterial({ color: selectedColor });
+      const mesh = new THREE.Mesh(geo, mat);
+      pScene.add(mesh);
 
-      ctx.fillStyle = '#1f1f1f'; 
-      ctx.fillRect(0, 0, 512, 512);
-
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 8;
-      ctx.lineCap = 'round';
-
-      ctx.beginPath();
-      ctx.arc(256, 0, 160, 0, Math.PI);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(256, 512, 160, Math.PI, 0);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(80, 200);
-      ctx.lineTo(80, 312);
-      ctx.moveTo(432, 200);
-      ctx.lineTo(432, 312);
-      ctx.stroke();
-
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat.set(24, 24);
-      return texture;
+      pRen.render(pScene, pCam);
     }
 
-    function getRandomFoodType() {
-      const rand = Math.random() * 100;
-      if (rand < 40) return { color: 0x9ca3af, points: 1, scale: 0.22 };     
-      if (rand < 70) return { color: 0x22c55e, points: 2, scale: 0.26 };     
-      if (rand < 85) return { color: 0x3b82f6, points: 5, scale: 0.30 };     
-      if (rand < 95) return { color: 0xa855f7, points: 10, scale: 0.35 };    
-      return { color: 0xeab308, points: 40, scale: 0.45 };                   
-    }
+    // THREE.JS ENGINE SETUP
+    function initEngine() {
+      const canvas = document.getElementById('game-canvas');
+      
+      try {
+        renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+      } catch(e) {
+        alert("Dein Browser/Gerät unterstützt kein WebGL!");
+        return;
+      }
 
-    function initThree() {
-      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.shadowMap.enabled = true;
 
       scene = new THREE.Scene();
-      scene.background = new THREE.Color("#4ade80");
+      scene.background = new THREE.Color("#0f172a");
 
       camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 300);
-      camera.position.set(0, 45, 0);
+      camera.position.set(0, 40, 0);
       camera.lookAt(0, 0, 0);
 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
-      scene.add(ambientLight);
+      const light = new THREE.AmbientLight(0xffffff, 0.9);
+      scene.add(light);
 
-      const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
-      dirLight.position.set(40, 80, 40);
-      dirLight.castShadow = true;
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+      dirLight.position.set(20, 40, 20);
       scene.add(dirLight);
 
-      const groundGeo = new THREE.PlaneGeometry(ARENA_SIZE * 2, ARENA_SIZE * 2);
-      const groundMat = new THREE.MeshStandardMaterial({ 
-        map: createRugTexture(), 
-        roughness: 0.7 
-      });
-      const ground = new THREE.Mesh(groundGeo, groundMat);
-      ground.rotation.x = -Math.PI / 2;
-      ground.receiveShadow = true;
+      // Boden
+      const gGeo = new THREE.PlaneGeometry(ARENA_SIZE * 2, ARENA_SIZE * 2);
+      const gMat = new THREE.MeshBasicMaterial({ color: 0x1e293b, side: THREE.DoubleSide });
+      const ground = new THREE.Mesh(gGeo, gMat);
+      ground.rotation.x = Math.PI / 2;
       scene.add(ground);
 
-      const outerGroundGeo = new THREE.PlaneGeometry(ARENA_SIZE * 10, ARENA_SIZE * 10);
-      const outerGroundMat = new THREE.MeshBasicMaterial({ color: 0x4ade80 });
-      const outerGround = new THREE.Mesh(outerGroundGeo, outerGroundMat);
-      outerGround.rotation.x = -Math.PI / 2;
-      outerGround.position.y = -0.05;
-      scene.add(outerGround);
-
-      window.addEventListener('resize', onWindowResize);
-    }
-
-    function onWindowResize() {
-      if (!camera || !renderer) return;
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
     }
 
     // WURM KLASSE
     class Worm {
-      constructor(isPlayer = false, name = "Bot", color = "#1982c4", startX = 0, startZ = 0) {
+      constructor(isPlayer, color, x, z) {
         this.isPlayer = isPlayer;
-        this.name = name;
         this.color = color;
         this.score = 0;
         this.dir = Math.random() * Math.PI * 2;
         this.targetDir = this.dir;
         this.isDead = false;
 
+        this.group = new THREE.Group();
+        scene.add(this.group);
+
         this.segments = [];
-        this.pathHistory = [];
-        this.meshGroup = new THREE.Group();
-        scene.add(this.meshGroup);
-
-        const headColorHex = isPlayer ? playerSegmentColors[0] : color;
-        const headMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(headColorHex), roughness: 0.3 });
-
-        const headGeo = new THREE.SphereGeometry(0.5, 16, 16);
-        const headMesh = new THREE.Mesh(headGeo, headMat);
-        headMesh.castShadow = true;
-        headMesh.position.set(startX, 0.5, startZ);
-        this.meshGroup.add(headMesh);
-        this.segments.push(headMesh);
-
-        // Augen
-        const eyeGeo = new THREE.SphereGeometry(0.12, 8, 8);
-        const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-        const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
-
-        this.eyeLeft = new THREE.Mesh(eyeGeo, eyeMat);
-        this.eyeLeft.position.set(-0.2, 0.22, 0.3);
-        headMesh.add(this.eyeLeft);
-        this.pupilLeft = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), pupilMat);
-        this.pupilLeft.position.set(0, 0, 0.08);
-        this.eyeLeft.add(this.pupilLeft);
-
-        this.eyeRight = new THREE.Mesh(eyeGeo, eyeMat);
-        this.eyeRight.position.set(0.2, 0.22, 0.3);
-        headMesh.add(this.eyeRight);
-        this.pupilRight = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), pupilMat);
-        this.pupilRight.position.set(0, 0, 0.08);
-        this.eyeRight.add(this.pupilRight);
-
-        for (let i = 0; i < 2000; i++) {
-          this.pathHistory.push(new THREE.Vector3(
-            startX - i * 0.05 * Math.sin(this.dir),
-            0.5,
-            startZ - i * 0.05 * Math.cos(this.dir)
-          ));
-        }
+        const headGeo = new THREE.SphereGeometry(0.5, 12, 12);
+        const headMat = new THREE.MeshBasicMaterial({ color: this.color });
+        const head = new THREE.Mesh(headGeo, headMat);
+        head.position.set(x, 0.5, z);
+        
+        this.group.add(head);
+        this.segments.push(head);
 
         for (let i = 0; i < 5; i++) {
-          this.addSegment(
-            startX - (i + 1) * SEGMENT_DISTANCE * Math.sin(this.dir), 
-            startZ - (i + 1) * SEGMENT_DISTANCE * Math.cos(this.dir)
-          );
+          this.addSegment(x, z);
         }
       }
 
       addSegment(x, z) {
-        const scale = 0.46; 
-        const segIdx = this.segments.length;
-
-        let bodyMat;
-        if (this.isPlayer) {
-          const colorHex = playerSegmentColors[(segIdx - 1) % NUM_CUSTOM_SEGMENTS];
-          bodyMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(colorHex), roughness: 0.3 });
-        } else {
-          bodyMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(this.color), roughness: 0.3 });
-        }
-
-        const bodyGeo = new THREE.SphereGeometry(scale, 12, 12);
-        const mesh = new THREE.Mesh(bodyGeo, bodyMat);
-        mesh.castShadow = true;
-        mesh.position.set(x, scale, z);
-        this.meshGroup.add(mesh);
+        const geo = new THREE.SphereGeometry(0.4, 10, 10);
+        const mat = new THREE.MeshBasicMaterial({ color: this.color });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(x, 0.4, z);
+        this.group.add(mesh);
         this.segments.push(mesh);
       }
 
-      removeLastSegment() {
-        if (this.segments.length <= 4) return;
-        const last = this.segments.pop();
-        this.meshGroup.remove(last);
-      }
-
-      syncSegmentsWithScore() {
-        const targetSegments = Math.max(5, 5 + Math.floor(this.score / 5));
-        while (this.segments.length < targetSegments) {
-          const tail = this.segments[this.segments.length - 1];
-          this.addSegment(tail.position.x, tail.position.z);
-        }
-        while (this.segments.length > targetSegments && this.segments.length > 5) {
-          this.removeLastSegment();
-        }
-      }
-
-      update(currentSpeed) {
+      update() {
         if (this.isDead) return;
 
+        // Drehen
         let diff = this.targetDir - this.dir;
         while (diff < -Math.PI) diff += Math.PI * 2;
         while (diff > Math.PI) diff -= Math.PI * 2;
+        this.dir += Math.max(-0.08, Math.min(0.08, diff));
 
-        diff = Math.max(-MAX_TURN_SPEED, Math.min(MAX_TURN_SPEED, diff));
-        this.dir += diff;
-
+        // Kopf bewegen
         const head = this.segments[0];
-        head.position.x += Math.sin(this.dir) * currentSpeed;
-        head.position.z += Math.cos(this.dir) * currentSpeed;
-        head.rotation.y = this.dir;
+        const speed = 0.1;
+        head.position.x += Math.sin(this.dir) * speed;
+        head.position.z += Math.cos(this.dir) * speed;
 
-        this.pathHistory.unshift(head.position.clone());
-
+        // Wand-Kollision
         if (Math.abs(head.position.x) > ARENA_SIZE || Math.abs(head.position.z) > ARENA_SIZE) {
           this.die();
           return;
         }
 
-        let accumulatedDistance = 0;
-        let historyIdx = 0;
-
-        for (let i = 1; i < this.segments.length; i++) {
-          const targetDistance = i * SEGMENT_DISTANCE;
-
-          while (historyIdx < this.pathHistory.length - 1 && accumulatedDistance < targetDistance) {
-            const p1 = this.pathHistory[historyIdx];
-            const p2 = this.pathHistory[historyIdx + 1];
-            const dist = p1.distanceTo(p2);
-
-            if (accumulatedDistance + dist >= targetDistance) {
-              const alpha = (targetDistance - accumulatedDistance) / dist;
-              this.segments[i].position.lerpVectors(p1, p2, alpha);
-              break;
-            }
-
-            accumulatedDistance += dist;
-            historyIdx++;
-          }
-        }
-
-        const maxHistoryNeeded = Math.ceil((this.segments.length * SEGMENT_DISTANCE) / currentSpeed) + 200;
-        if (this.pathHistory.length > maxHistoryNeeded) {
-          this.pathHistory.length = maxHistoryNeeded;
-        }
-
-        if (this.isPlayer && Math.random() < 0.3) {
-          spawnTrailParticle(head.position.x, head.position.z, playerSegmentColors[0]);
-        }
-
-        if (isBoosting && this.isPlayer && Math.random() < 0.75) {
-          const randomColorHex = BOOST_VEIL_COLORS[Math.floor(Math.random() * BOOST_VEIL_COLORS.length)];
-          const randomSeg = this.segments[Math.floor(Math.random() * this.segments.length)];
-          spawnBoostVeilParticle(randomSeg.position.x, randomSeg.position.z, randomColorHex);
-        }
-
-        for (let i = 8; i < this.segments.length; i++) {
-          if (head.position.distanceTo(this.segments[i].position) < 0.52) {
-            this.die();
-            return;
-          }
+        // Segmente folgen lassen
+        for (let i = this.segments.length - 1; i > 0; i--) {
+          const seg = this.segments[i];
+          const prev = this.segments[i - 1];
+          seg.position.lerp(prev.position, 0.3);
         }
       }
 
       die() {
-        if (this.isDead) return;
         this.isDead = true;
-
-        const primaryColor = this.isPlayer ? playerSegmentColors[0] : this.color;
-        this.segments.forEach(seg => {
-          spawnFood(seg.position.x, seg.position.z);
-          spawnDeathParticles(seg.position.x, seg.position.z, primaryColor);
-        });
-
-        scene.remove(this.meshGroup);
-
+        scene.remove(this.group);
         if (this.isPlayer) {
-          playHitSound();
-          onGameOver(this.score);
+          gameOver();
         }
       }
     }
 
-    function spawnDeathParticles(x, z, colorHex) {
-      for (let i = 0; i < 4; i++) {
-        const pGeo = new THREE.SphereGeometry(0.18, 8, 8);
-        const pMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(colorHex), transparent: true, opacity: 0.8 });
-        const pMesh = new THREE.Mesh(pGeo, pMat);
-        pMesh.position.set(x, 0.5, z);
-        pMesh.userData = {
-          vx: (Math.random() - 0.5) * 0.1,
-          vy: Math.random() * 0.12 + 0.05,
-          vz: (Math.random() - 0.5) * 0.1,
-          life: 1.0
-        };
-        scene.add(pMesh);
-        deathParticles.push(pMesh);
-      }
-    }
+    function spawnFood() {
+      const geo = new THREE.SphereGeometry(0.25, 8, 8);
+      const mat = new THREE.MeshBasicMaterial({ color: 0xeab308 });
+      const mesh = new THREE.Mesh(geo, mat);
 
-    function spawnTrailParticle(x, z, colorHex) {
-      const pGeo = new THREE.SphereGeometry(0.1, 6, 6);
-      const pMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(colorHex), transparent: true, opacity: 0.6 });
-      const pMesh = new THREE.Mesh(pGeo, pMat);
-      pMesh.position.set(x + (Math.random()-0.5)*0.2, 0.2, z + (Math.random()-0.5)*0.2);
-      pMesh.userData = { life: 1.0 };
-      scene.add(pMesh);
-      trailParticles.push(pMesh);
-    }
+      const px = (Math.random() - 0.5) * (ARENA_SIZE * 1.8);
+      const pz = (Math.random() - 0.5) * (ARENA_SIZE * 1.8);
 
-    function spawnBoostVeilParticle(x, z, colorHex) {
-      const pGeo = new THREE.SphereGeometry(0.28, 8, 8);
-      const pMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(colorHex), transparent: true, opacity: 0.7 });
-      const pMesh = new THREE.Mesh(pGeo, pMat);
-      pMesh.position.set(x + (Math.random()-0.5)*0.6, 0.3, z + (Math.random()-0.5)*0.6);
-      pMesh.userData = { life: 1.0 };
-      scene.add(pMesh);
-      boostVeilParticles.push(pMesh);
-    }
-
-    function spawnFood(x = null, z = null) {
-      const type = getRandomFoodType();
-      const foodGeo = new THREE.DodecahedronGeometry(type.scale);
-      const foodMat = new THREE.MeshStandardMaterial({
-        color: type.color,
-        roughness: 0.1,
-        emissive: type.color,
-        emissiveIntensity: 0.5
-      });
-      const mesh = new THREE.Mesh(foodGeo, foodMat);
-      mesh.castShadow = true;
-      mesh.userData = { points: type.points };
-
-      const px = x !== null ? x : (Math.random() - 0.5) * (ARENA_SIZE * 1.85);
-      const pz = z !== null ? z : (Math.random() - 0.5) * (ARENA_SIZE * 1.85);
-
-      mesh.position.set(px, type.scale, pz);
+      mesh.position.set(px, 0.25, pz);
       scene.add(mesh);
       foods.push(mesh);
     }
 
-    // JOYSTICK STEUERUNG
-    const joystickContainer = document.getElementById('joystick-container');
-    const joystickStick = document.getElementById('joystick-stick');
-
-    let moveTouchId = null;
-    let touchStartX = 0;
-    let touchStartY = 0;
-
+    // GAMEPLAY CONTROLS
+    let touchX = 0, touchY = 0;
     window.addEventListener('pointerdown', (e) => {
-      if (!isPlaying) return;
-      if (e.target.closest('#boost-btn') || e.target.closest('#settings-btn') || e.target.closest('#open-skin-btn')) return;
-      if (moveTouchId !== null) return;
-
-      initAudio();
-      moveTouchId = e.pointerId;
-      touchStartX = e.clientX;
-      touchStartY = e.clientY;
-
-      joystickContainer.style.left = `${touchStartX}px`;
-      joystickContainer.style.top = `${touchStartY}px`;
-      joystickContainer.classList.remove('hidden');
-      joystickStick.style.transform = `translate(0px, 0px)`;
+      if (!isPlaying || e.target.closest('button')) return;
+      touchX = e.clientX;
+      touchY = e.clientY;
+      document.getElementById('joystick-container').style.left = touchX + 'px';
+      document.getElementById('joystick-container').style.top = touchY + 'px';
+      document.getElementById('joystick-container').classList.remove('hidden');
     });
 
     window.addEventListener('pointermove', (e) => {
-      if (e.pointerId !== moveTouchId || !player || player.isDead) return;
-
-      const dx = e.clientX - touchStartX;
-      const dy = e.clientY - touchStartY;
-      const maxRadius = 40;
-      const dist = Math.min(maxRadius, Math.sqrt(dx * dx + dy * dy));
-
-      if (dist > 5) {
-        const angle = Math.atan2(dx, dy);
-        player.targetDir = angle;
-
-        const moveX = Math.sin(angle) * dist;
-        const moveY = Math.cos(angle) * dist;
-        joystickStick.style.transform = `translate(${moveX}px, ${moveY}px)`;
+      if (!isPlaying || document.getElementById('joystick-container').classList.contains('hidden')) return;
+      const dx = e.clientX - touchX;
+      const dy = e.clientY - touchY;
+      if (Math.hypot(dx, dy) > 5 && player) {
+        player.targetDir = Math.atan2(dx, dy);
       }
     });
 
-    const resetJoystick = (e) => {
-      if (e.pointerId === moveTouchId) {
-        moveTouchId = null;
-        joystickContainer.classList.add('hidden');
-        if (player && !player.isDead) {
-          player.targetDir = player.dir;
-        }
-      }
-    };
+    window.addEventListener('pointerup', () => {
+      document.getElementById('joystick-container').classList.add('hidden');
+    });
 
-    window.addEventListener('pointerup', resetJoystick);
-    window.addEventListener('pointercancel', resetJoystick);
-
-    // BOOST LOGIK
-    const boostIndicator = document.getElementById('boost-indicator');
-
-    function startBoost() {
-      if (player && player.score >= 10) {
-        isBoosting = true;
-        boostIndicator.classList.remove('hidden');
-      }
-    }
-
-    function stopBoost() {
-      isBoosting = false;
-      boostIndicator.classList.add('hidden');
-    }
-
-    boostBtn.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); startBoost(); });
-    boostBtn.addEventListener('pointerup', (e) => { e.stopPropagation(); e.preventDefault(); stopBoost(); });
-    boostBtn.addEventListener('pointercancel', (e) => { e.stopPropagation(); e.preventDefault(); stopBoost(); });
-
-    window.addEventListener('keydown', (e) => { if (e.code === 'Space' && isPlaying) startBoost(); });
-    window.addEventListener('keyup', (e) => { if (e.code === 'Space') stopBoost(); });
-
-    // LIVE RANGLISTE UPDATEN
-    const liveLeaderboardEl = document.getElementById('live-leaderboard');
-
-    function updateLiveMatchLeaderboard() {
-      const allWorms = [];
-      if (player && !player.isDead) allWorms.push(player);
-      bots.forEach(b => { if (!b.isDead) allWorms.push(b); });
-
-      allWorms.sort((a,b) => b.score - a.score);
-
-      liveLeaderboardEl.innerHTML = '';
-      allWorms.slice(0, 5).forEach((w, idx) => {
-        const li = document.createElement('li');
-        li.className = "flex justify-between items-center";
-        const mainColor = w.isPlayer ? playerSegmentColors[0] : w.color;
-        li.innerHTML = `
-          <span class="truncate max-w-[85px]" style="color: ${mainColor}">${escapeHtml(w.name)}</span>
-          <span class="text-white font-black">${Math.floor(w.score)}</span>
-        `;
-        liveLeaderboardEl.appendChild(li);
-      });
-    }
-
-    // GAME LOOP
+    // LOOP
     function animate() {
       if (!isPlaying) return;
-
-      animationFrameId = requestAnimationFrame(animate);
+      animId = requestAnimationFrame(animate);
 
       if (player && !player.isDead) {
-        let currentSpeed = BASE_SPEED;
-        
-        if (isBoosting) {
-          if (player.score >= 10) {
-            currentSpeed = BASE_SPEED * 1.8;
-            const now = Date.now();
-            if (now - lastBoostSegmentDropTime > 400) {
-              lastBoostSegmentDropTime = now;
-              player.score = Math.max(0, player.score - 2);
-              player.syncSegmentsWithScore();
-              document.getElementById('score-val').textContent = player.score;
-            }
-          } else {
-            stopBoost();
-          }
-        }
+        player.update();
+        camera.position.x = player.segments[0].position.x;
+        camera.position.z = player.segments[0].position.z + 20;
+        camera.lookAt(player.segments[0].position);
 
-        player.update(currentSpeed);
-
-        const head = player.segments[0];
-        const targetCamY = 42; 
-
-        camera.position.x = head.position.x;
-        camera.position.z = head.position.z;
-        camera.position.y += (targetCamY - camera.position.y) * 0.05;
-        camera.lookAt(head.position.x, 0, head.position.z);
-
-        // Futter fressen
+        // Futter
         for (let i = foods.length - 1; i >= 0; i--) {
-          const f = foods[i];
-          if (head.position.distanceTo(f.position) < 0.8) {
-            const rawPoints = f.userData.points || 1;
-            scene.remove(f);
-            foods.splice(i, 1);
-            player.score += rawPoints;
-            playPopSound();
-            player.syncSegmentsWithScore();
-            document.getElementById('score-val').textContent = player.score;
-            if (Math.random() < 0.7) spawnFood();
-          }
-        }
-
-        // Kollision mit Bots
-        bots.forEach(bot => {
-          if (bot.isDead) return;
-          for (let i = 0; i < bot.segments.length; i++) {
-            if (head.position.distanceTo(bot.segments[i].position) < 0.65) {
-              player.die();
-              break;
-            }
-          }
-          const botHead = bot.segments[0];
-          for (let i = 0; i < player.segments.length; i++) {
-            if (botHead.position.distanceTo(player.segments[i].position) < 0.65) {
-              bot.die();
-              break;
-            }
-          }
-        });
-      }
-
-      // Bots Update
-      bots.forEach(bot => {
-        if (bot.isDead) return;
-        if (Math.random() < 0.02) bot.targetDir += (Math.random() - 0.5) * 1.5;
-        const bHead = bot.segments[0];
-        if (Math.abs(bHead.position.x) > ARENA_SIZE - 3 || Math.abs(bHead.position.z) > ARENA_SIZE - 3) {
-          bot.targetDir = Math.atan2(-bHead.position.x, -bHead.position.z);
-        }
-        bot.update(BASE_SPEED);
-
-        for (let i = foods.length - 1; i >= 0; i--) {
-          if (bHead.position.distanceTo(foods[i].position) < 0.8) {
+          if (player.segments[0].position.distanceTo(foods[i].position) < 0.7) {
             scene.remove(foods[i]);
             foods.splice(i, 1);
-            bot.score += foods[i].userData.points || 1;
-            bot.syncSegmentsWithScore();
-            if (Math.random() < 0.7) spawnFood();
+            player.score += 10;
+            player.addSegment(player.segments[0].position.x, player.segments[0].position.z);
+            document.getElementById('score-val').textContent = player.score;
+            spawnFood();
           }
         }
-      });
-
-      bots = bots.filter(b => !b.isDead);
-      while (bots.length < 8) {
-        const bx = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
-        const bz = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
-        const color = BOT_COLORS[Math.floor(Math.random() * BOT_COLORS.length)];
-        const bName = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
-        bots.push(new Worm(false, bName, color, bx, bz));
       }
 
-      // Partikel-Updates
-      for (let i = deathParticles.length - 1; i >= 0; i--) {
-        const p = deathParticles[i];
-        p.position.x += p.userData.vx;
-        p.position.y += p.userData.vy;
-        p.position.z += p.userData.vz;
-        p.userData.life -= 0.02;
-        p.material.opacity = p.userData.life;
-        if (p.userData.life <= 0) { scene.remove(p); deathParticles.splice(i, 1); }
-      }
-
-      for (let i = trailParticles.length - 1; i >= 0; i--) {
-        const p = trailParticles[i];
-        p.userData.life -= 0.04;
-        p.material.opacity = p.userData.life;
-        p.scale.multiplyScalar(0.96);
-        if (p.userData.life <= 0) { scene.remove(p); trailParticles.splice(i, 1); }
-      }
-
-      for (let i = boostVeilParticles.length - 1; i >= 0; i--) {
-        const p = boostVeilParticles[i];
-        p.userData.life -= 0.05;
-        p.material.opacity = p.userData.life;
-        p.scale.multiplyScalar(0.95);
-        if (p.userData.life <= 0) { scene.remove(p); boostVeilParticles.splice(i, 1); }
-      }
-
-      updateLiveMatchLeaderboard();
       renderer.render(scene, camera);
     }
 
-    // SPIEL START & OVER
     function startGame() {
-      const name = nameInput.value.trim() || 'WurmPlayer';
-      localStorage.setItem('worm_player_name', name);
-
-      if (player) scene.remove(player.meshGroup);
-      bots.forEach(b => scene.remove(b.meshGroup));
+      if (player) scene.remove(player.group);
       foods.forEach(f => scene.remove(f));
-      deathParticles.forEach(p => scene.remove(p));
-      trailParticles.forEach(p => scene.remove(p));
-      boostVeilParticles.forEach(p => scene.remove(p));
-
-      bots = [];
       foods = [];
-      deathParticles = [];
-      trailParticles = [];
-      boostVeilParticles = [];
-      stopBoost();
-      moveTouchId = null;
 
-      player = new Worm(true, name, playerSegmentColors[0], 0, 0);
+      player = new Worm(true, selectedColor, 0, 0);
 
-      for (let i = 0; i < 720; i++) {
-        spawnFood();
-      }
-
-      for (let i = 0; i < 8; i++) {
-        const bx = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
-        const bz = (Math.random() - 0.5) * (ARENA_SIZE * 1.5);
-        const color = BOT_COLORS[Math.floor(Math.random() * BOT_COLORS.length)];
-        const bName = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
-        bots.push(new Worm(false, bName, color, bx, bz));
-      }
-
-      document.getElementById('score-val').textContent = '0';
+      for (let i = 0; i < 50; i++) spawnFood();
 
       document.getElementById('start-menu').classList.add('hidden');
       document.getElementById('gameover-menu').classList.add('hidden');
       document.getElementById('hud').classList.remove('hidden');
-      boostBtn.classList.remove('hidden');
+      document.getElementById('boost-btn').classList.remove('hidden');
 
       isPlaying = true;
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
       animate();
     }
 
-    function onGameOver(score) {
+    function gameOver() {
       isPlaying = false;
-      stopBoost();
-      moveTouchId = null;
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      if (animId) cancelAnimationFrame(animId);
 
       document.getElementById('hud').classList.add('hidden');
-      boostBtn.classList.add('hidden');
-      document.getElementById('final-score').textContent = Math.floor(score);
+      document.getElementById('boost-btn').classList.add('hidden');
+      document.getElementById('final-score').textContent = player ? player.score : 0;
       document.getElementById('gameover-menu').classList.remove('hidden');
-
-      const pName = nameInput.value.trim() || 'WurmPlayer';
-      saveScore(pName, score);
     }
 
-    document.getElementById('start-btn').addEventListener('click', () => {
-      initAudio();
-      startGame();
-    });
+    // UI ACTIONS
+    document.getElementById('start-btn').onclick = startGame;
+    document.getElementById('restart-btn').onclick = startGame;
+    document.getElementById('open-skin-btn').onclick = () => {
+      document.getElementById('skin-modal').classList.remove('hidden');
+      initPreview();
+    };
+    document.getElementById('close-skin-btn').onclick = () => document.getElementById('skin-modal').classList.add('hidden');
+    document.getElementById('save-skin-btn').onclick = () => document.getElementById('skin-modal').classList.add('hidden');
 
-    document.getElementById('restart-btn').addEventListener('click', () => {
-      initAudio();
-      loadLeaderboard();
-      document.getElementById('gameover-menu').classList.add('hidden');
-      document.getElementById('start-menu').classList.remove('hidden');
-    });
-
-    // Initialisierung beim Laden
-    initThree();
-    loadLeaderboard();
+    // INITIALISIEREN
+    initEngine();
   </script>
 </body>
 </html>
