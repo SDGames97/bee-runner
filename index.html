@@ -117,7 +117,7 @@
     </div>
   </div>
 
-  <!-- SKIN MODAL MIT 3D-VORSCHAU -->
+  <!-- SKIN MODAL MIT TOP-DOWN 3D-VORSCHAU -->
   <div id="skin-modal" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-40 hidden">
     <div class="bg-slate-900 p-5 rounded-3xl border border-purple-500/40 max-w-lg w-full text-center shadow-2xl flex flex-col max-h-[95vh]">
       
@@ -126,9 +126,9 @@
         <button id="close-skin-btn" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white font-bold flex items-center justify-center">✕</button>
       </div>
 
-      <div class="w-full h-36 bg-slate-950 rounded-2xl mb-3 relative overflow-hidden border border-purple-500/30">
+      <div class="w-full h-28 bg-slate-950 rounded-2xl mb-3 relative overflow-hidden border border-purple-500/30">
         <canvas id="skin-preview-canvas" class="w-full h-full block"></canvas>
-        <span class="absolute bottom-2 right-3 text-[10px] font-bold text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-700">3D Vorschau</span>
+        <span class="absolute bottom-1.5 right-2.5 text-[9px] font-bold text-slate-400 bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-700">Vogelperspektive Vorschau</span>
       </div>
 
       <div class="flex gap-2 mb-3 border-b border-slate-800 pb-2">
@@ -220,10 +220,6 @@
             <option value="top-left">Oben Links</option>
           </select>
         </div>
-
-        <button id="reset-scores-btn" class="w-full py-2.5 bg-rose-950/60 hover:bg-rose-900 border border-rose-800 text-rose-300 text-xs font-bold rounded-xl transition">
-          Lokale Highscores löschen
-        </button>
       </div>
 
       <button id="close-settings-btn" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm rounded-xl border border-slate-600 transition">
@@ -286,7 +282,6 @@
     const settingsModal = document.getElementById('settings-modal');
     const closeSettingsBtn = document.getElementById('close-settings-btn');
     const soundToggle = document.getElementById('sound-toggle');
-    const resetScoresBtn = document.getElementById('reset-scores-btn');
 
     const boostBtn = document.getElementById('boost-btn');
     const boostPosSelect = document.getElementById('boost-pos-select');
@@ -316,16 +311,8 @@
     boostPosSelect.value = savedBoostPos;
     updateBoostPosition(savedBoostPos);
 
-    resetScoresBtn.addEventListener('click', () => {
-      if (confirm('Möchtest du die lokalen Highscores löschen?')) {
-        localStorage.removeItem('worm_scores');
-        loadLeaderboard();
-        alert('Lokale Highscores gelöscht!');
-      }
-    });
-
     // ==========================================
-    // SKIN MENÜ LOGIK WITH 3D PREVIEW
+    // SKIN MENÜ LOGIK WITH TOP-DOWN 3D PREVIEW
     // ==========================================
     const NUM_CUSTOM_SEGMENTS = 20;
     let playerSegmentColors = Array(NUM_CUSTOM_SEGMENTS).fill('#1982c4');
@@ -469,7 +456,7 @@
     renderSegmentPickers();
 
     // ==========================================
-    // 3D SKIN PREVIEW SYSTEM
+    // TOP-DOWN 3D SKIN PREVIEW SYSTEM (GRÖSSER)
     // ==========================================
     let previewRenderer, previewScene, previewCamera, previewAnimId;
     let previewWormSegments = [];
@@ -477,7 +464,7 @@
     function initSkinPreview() {
       const pCanvas = document.getElementById('skin-preview-canvas');
       const w = pCanvas.clientWidth || 400;
-      const h = pCanvas.clientHeight || 150;
+      const h = pCanvas.clientHeight || 112;
 
       if (!previewRenderer) {
         previewRenderer = new THREE.WebGLRenderer({ canvas: pCanvas, antialias: true, alpha: true });
@@ -485,14 +472,15 @@
       previewRenderer.setSize(w, h);
 
       previewScene = new THREE.Scene();
+      // Vogelperspektive Kamera (direkt von oben nach unten schauend)
       previewCamera = new THREE.PerspectiveCamera(40, w / h, 0.1, 100);
-      previewCamera.position.set(0, 10, 12);
+      previewCamera.position.set(0, 11, 0.1);
       previewCamera.lookAt(0, 0, 0);
 
       const amb = new THREE.AmbientLight(0xffffff, 0.9);
       previewScene.add(amb);
       const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-      dir.position.set(5, 10, 5);
+      dir.position.set(0, 10, 5);
       previewScene.add(dir);
 
       createPreviewWorm();
@@ -504,31 +492,32 @@
       previewWormSegments.forEach(s => previewScene.remove(s));
       previewWormSegments = [];
 
-      const numSegments = 12;
+      const numSegments = 10;
       for (let i = 0; i < numSegments; i++) {
         const colorHex = playerSegmentColors[i % NUM_CUSTOM_SEGMENTS];
         const texture = createSegmentTexture(colorHex, selectedPattern);
         const mat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.3 });
-        const geo = new THREE.SphereGeometry(0.5, 16, 16);
+        // Größerer Radius für deutlich bessere Sichtbarkeit im Menü
+        const geo = new THREE.SphereGeometry(0.72, 16, 16);
         const mesh = new THREE.Mesh(geo, mat);
 
         if (i === 0) {
-          const eyeGeo = new THREE.SphereGeometry(0.12, 8, 8);
+          const eyeGeo = new THREE.SphereGeometry(0.16, 8, 8);
           const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
           const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
 
           const eyeLeft = new THREE.Mesh(eyeGeo, eyeMat);
-          eyeLeft.position.set(-0.2, 0.22, 0.3);
+          eyeLeft.position.set(-0.3, 0.35, 0.45);
           mesh.add(eyeLeft);
-          const pupilLeft = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), pupilMat);
-          pupilLeft.position.set(0, 0, 0.08);
+          const pupilLeft = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), pupilMat);
+          pupilLeft.position.set(0, 0, 0.1);
           eyeLeft.add(pupilLeft);
 
           const eyeRight = new THREE.Mesh(eyeGeo, eyeMat);
-          eyeRight.position.set(0.2, 0.22, 0.3);
+          eyeRight.position.set(0.3, 0.35, 0.45);
           mesh.add(eyeRight);
-          const pupilRight = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), pupilMat);
-          pupilRight.position.set(0, 0, 0.08);
+          const pupilRight = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), pupilMat);
+          pupilRight.position.set(0, 0, 0.1);
           eyeRight.add(pupilRight);
         }
 
@@ -543,11 +532,11 @@
 
     function animateSkinPreview() {
       previewAnimId = requestAnimationFrame(animateSkinPreview);
-      const time = Date.now() * 0.003;
+      const time = Date.now() * 0.0025;
 
       previewWormSegments.forEach((seg, i) => {
-        const x = (i - 6) * 0.75;
-        const z = Math.sin(time + i * 0.4) * 0.8;
+        const x = Math.sin(time + i * 0.35) * 2.2;
+        const z = (i - 4.5) * 0.75;
         seg.position.set(x, 0, z);
       });
 
@@ -773,6 +762,20 @@
     const BOT_NAMES = ["Alpha", "Vortex", "SlitherX", "Shadow", "NeonBug", "Viper", "Omega", "Phantom"];
     const BOT_COLORS = ["#ff595e", "#8ac926", "#6a4c93", "#ffca3a", "#ff924c"];
 
+    // 10 Verschiedene Farben für den Boost-Schleier (Aura)
+    const BOOST_VEIL_COLORS = [
+      0x00ffff, // Cyan
+      0xff00ff, // Magenta
+      0xffff00, // Gelb
+      0x00ff00, // Neon-Grün
+      0xff3366, // Pink-Rot
+      0x9933ff, // Lila
+      0xff6600, // Neon-Orange
+      0x00ffff, // Türkis
+      0x33ff99, // Mint
+      0xffffff  // Reines Leucht-Weiß
+    ];
+
     function createRugTexture() {
       const canvas = document.createElement('canvas');
       canvas.width = 512;
@@ -866,7 +869,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    // WURM KLASSE WITH DYNAMISCHEN AUGEN
+    // WURM KLASSE WITH DYNAMISCHEN AUGEN & BOOST SCHLEIER
     class Worm {
       constructor(isPlayer = false, name = "Bot", color = "#1982c4", startX = 0, startZ = 0) {
         this.isPlayer = isPlayer;
@@ -1022,6 +1025,13 @@
           spawnTrailParticle(head.position.x, head.position.z, playerSegmentColors[0]);
         }
 
+        // Wenn Boost aktiv ist, erzeugen wir den mehrfarbigen Leucht-Schleier (aus 10 Farben)
+        if (isBoosting && this.isPlayer && Math.random() < 0.75) {
+          const randomColorHex = BOOST_VEIL_COLORS[Math.floor(Math.random() * BOOST_VEIL_COLORS.length)];
+          const randomSeg = this.segments[Math.floor(Math.random() * this.segments.length)];
+          spawnBoostVeilParticle(randomSeg.position.x, randomSeg.position.z, randomColorHex);
+        }
+
         for (let i = 8; i < this.segments.length; i++) {
           if (head.position.distanceTo(this.segments[i].position) < 0.52) {
             this.die();
@@ -1097,6 +1107,19 @@
       pMesh.userData = { life: 1.0 };
       scene.add(pMesh);
       trailParticles.push(pMesh);
+    }
+
+    // BOOST SCHLEIER / AURA PARTIKEL
+    let boostVeilParticles = [];
+
+    function spawnBoostVeilParticle(x, z, colorHex) {
+      const pGeo = new THREE.SphereGeometry(0.28, 8, 8);
+      const pMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(colorHex), transparent: true, opacity: 0.7 });
+      const pMesh = new THREE.Mesh(pGeo, pMat);
+      pMesh.position.set(x + (Math.random()-0.5)*0.6, 0.3, z + (Math.random()-0.5)*0.6);
+      pMesh.userData = { life: 1.0 };
+      scene.add(pMesh);
+      boostVeilParticles.push(pMesh);
     }
 
     function spawnFood(x = null, z = null) {
@@ -1232,7 +1255,7 @@
       }
     });
 
-    // UPDATING LIVE RANGLISTE (CLEAN & TRANSPARENT)
+    // UPDATING LIVE RANGLISTE
     const liveLeaderboardEl = document.getElementById('live-leaderboard');
 
     function updateLiveMatchLeaderboard() {
@@ -1391,12 +1414,25 @@
         }
       }
 
+      // Boost Schleier Partikel Update
+      for (let i = boostVeilParticles.length - 1; i >= 0; i--) {
+        const p = boostVeilParticles[i];
+        p.userData.life -= 0.05;
+        p.material.opacity = p.userData.life;
+        p.scale.multiplyScalar(0.95);
+
+        if (p.userData.life <= 0) {
+          scene.remove(p);
+          boostVeilParticles.splice(i, 1);
+        }
+      }
+
       updateLiveMatchLeaderboard();
 
       renderer.render(scene, camera);
     }
 
-    // SPIEL START & OVER
+    // SPIEL START & OVER (JETZT MIT 300 MEHR FUTTER = 720 GESAMT)
     function startGame() {
       const name = nameInput.value.trim() || 'WurmPlayer';
       localStorage.setItem('worm_player_name', name);
@@ -1406,17 +1442,20 @@
       foods.forEach(f => scene.remove(f));
       deathParticles.forEach(p => scene.remove(p));
       trailParticles.forEach(p => scene.remove(p));
+      boostVeilParticles.forEach(p => scene.remove(p));
 
       bots = [];
       foods = [];
       deathParticles = [];
       trailParticles = [];
+      boostVeilParticles = [];
       stopBoost();
       moveTouchId = null;
 
       player = new Worm(true, name, playerSegmentColors[0], 0, 0);
 
-      for (let i = 0; i < 800; i++) {
+      // Start-Futter: 420 + 300 = 720 Futterteile
+      for (let i = 0; i < 720; i++) {
         spawnFood();
       }
 
