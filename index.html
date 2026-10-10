@@ -53,14 +53,14 @@
     </div>
   </div>
 
-  <!-- HUD MIT PUNKTEN & LIVE RANGLISTE -->
+  <!-- HUD MIT PUNKTEN & KLEINER, TRANSPARENTER LIVE RANGLISTE -->
   <div id="hud" class="absolute top-4 left-4 right-20 flex justify-between items-start pointer-events-none hidden z-10">
     <div class="bg-slate-900/80 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-lg border border-cyan-500/30 text-white font-bold text-base md:text-lg flex items-center gap-3">
       <span>🌟 Punkte:</span> <span id="score-val" class="text-cyan-400 text-xl">0</span>
       <span id="boost-indicator" class="hidden text-xs bg-amber-500/30 border border-amber-400 text-amber-300 px-2.5 py-0.5 rounded-full animate-pulse">BOOST!</span>
     </div>
 
-    <!-- LIVE INGAME RANGLISTE (TOP 5) -->
+    <!-- ELEGANTE, LEICHT TRANSPARENTE LIVE RANGLISTE (TOP 5) -->
     <div class="bg-slate-950/40 backdrop-blur-sm p-2.5 rounded-xl shadow-lg border border-slate-800/60 w-36">
       <div class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
         🏆 Top 5
@@ -117,7 +117,7 @@
     </div>
   </div>
 
-  <!-- SKIN MODAL MIT DUNKELBLAUEM, KOMPAKTEM VORSCHAUFELD -->
+  <!-- SKIN MODAL MIT DUNKELBLAUEM, KOMPAKTEM VORSCHAUFELD & HORIZONTALEM WURM -->
   <div id="skin-modal" class="absolute inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-40 hidden">
     <div class="bg-slate-900 p-5 rounded-3xl border border-purple-500/40 max-w-lg w-full text-center shadow-2xl flex flex-col max-h-[95vh]">
       
@@ -134,57 +134,64 @@
 
       <div class="flex gap-2 mb-3 border-b border-slate-800 pb-2">
         <button id="tab-presets-btn" class="flex-1 py-1.5 rounded-xl text-xs font-bold bg-purple-600 text-white transition">Voreingestellte Skins</button>
-        <button id="tab-custom-btn" class="flex-1 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 active:bg-purple-600 active:text-white transition">Farbverlauf Erstellen</button>
+        <button id="tab-custom-btn" class="flex-1 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 active:bg-purple-600 active:text-white transition">Eigene Haut</button>
       </div>
 
-      <!-- PRESET SKINS -->
       <div id="tab-presets-content" class="overflow-y-auto pr-1 space-y-2 text-left custom-scroll mb-3 max-h-[40vh]">
         <div class="grid grid-cols-2 gap-2">
-          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left" data-color1="#06b6d4" data-color2="#3b82f6">
+          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left" data-colors="#06b6d4,#3b82f6" data-pattern="none">
             <span class="block text-xs font-bold text-cyan-400 mb-1">Cyber Neon</span>
             <div class="h-3 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500"></div>
           </button>
-          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left" data-color1="#ef4444" data-color2="#eab308">
+          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left" data-colors="#ef4444,#f97316,#eab308" data-pattern="triangle">
             <span class="block text-xs font-bold text-amber-400 mb-1">Feuerdrache</span>
-            <div class="h-3 rounded-full bg-gradient-to-r from-red-500 to-yellow-500"></div>
+            <div class="h-3 rounded-full bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500"></div>
           </button>
-          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left" data-color1="#22c55e" data-color2="#10b981">
+          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left" data-colors="#22c55e,#10b981" data-pattern="circle">
             <span class="block text-xs font-bold text-emerald-400 mb-1">Waldmeister</span>
             <div class="h-3 rounded-full bg-gradient-to-r from-green-500 to-emerald-400"></div>
           </button>
-          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left" data-color1="#a855f7" data-color2="#ec4899">
+          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left" data-colors="#a855f7,#ec4899" data-pattern="trapezoid">
             <span class="block text-xs font-bold text-pink-400 mb-1">Glow Worm</span>
             <div class="h-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"></div>
           </button>
-          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left col-span-2" data-rainbow="true">
+          <button class="preset-skin-card p-3 rounded-2xl bg-slate-800/80 border border-slate-700 hover:border-cyan-400 transition text-left col-span-2" data-rainbow="true" data-pattern="stripes">
             <span class="block text-xs font-bold text-yellow-300 mb-1">Regenbogen Express</span>
             <div class="h-3 rounded-full bg-gradient-to-r from-red-500 via-green-500 via-blue-500 to-purple-500"></div>
           </button>
         </div>
       </div>
 
-      <!-- FARBVERLAUF AUS 2 FARBEN ERSTELLEN -->
       <div id="tab-custom-content" class="hidden overflow-y-auto pr-1 space-y-3 text-left custom-scroll mb-3 max-h-[40vh]">
         <div class="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/80">
           
-          <div class="flex gap-2 mb-3">
-            <button id="select-color1-btn" class="flex-1 py-2 px-3 rounded-xl border-2 border-cyan-400 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2">
-              <span id="color1-preview" class="w-4 h-4 rounded-full border border-white" style="background:#06b6d4"></span>
-              1. Farbe (Kopf)
-            </button>
-            <button id="select-color2-btn" class="flex-1 py-2 px-3 rounded-xl border-2 border-slate-700 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2">
-              <span id="color2-preview" class="w-4 h-4 rounded-full border border-white" style="background:#10b981"></span>
-              2. Farbe (Schwanz)
-            </button>
-          </div>
-
-          <div>
-            <span id="palette-label" class="text-[11px] font-bold text-cyan-300 block mb-2">Wähle die 1. Farbe (Kopf):</span>
-            <!-- 30 FESTE FARBEN PALETTE -->
-            <div id="color-palette" class="grid grid-cols-6 gap-2 bg-slate-900 p-2.5 rounded-2xl border border-slate-700 max-h-36 overflow-y-auto custom-scroll">
+          <div class="mb-3">
+            <span class="text-[11px] text-slate-400 font-bold block mb-1">Schnell-Muster:</span>
+            <div class="grid grid-cols-4 gap-1.5">
+              <button id="preset-stripes" class="py-1 bg-slate-700 hover:bg-slate-600 text-[10px] font-bold rounded-lg border border-slate-600">Abwechselnd</button>
+              <button id="preset-rainbow" class="py-1 bg-gradient-to-r from-red-500 via-green-500 to-blue-500 text-[10px] font-bold rounded-lg text-white">Regenbogen</button>
+              <button id="preset-gradient" class="py-1 bg-gradient-to-r from-cyan-500 to-amber-500 text-[10px] font-bold rounded-lg text-white">Verlauf</button>
+              <button id="preset-random" class="py-1 bg-purple-600 hover:bg-purple-500 text-[10px] font-bold rounded-lg">Zufall</button>
             </div>
           </div>
 
+          <div class="mb-3">
+            <label for="pattern-select" class="text-[11px] text-slate-400 font-bold block mb-1">Form-Muster auf den Segmenten:</label>
+            <select id="pattern-select" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-bold text-cyan-300 focus:outline-none focus:border-cyan-400">
+              <option value="none">Kein Muster (Einfarbig)</option>
+              <option value="circle">⭕ Kreise</option>
+              <option value="trapezoid">📐 Trapeze</option>
+              <option value="triangle">🔺 Dreiecke</option>
+              <option value="stripes">🏁 Streifen</option>
+              <option value="checker">🏁 Schachbrett</option>
+            </select>
+          </div>
+
+          <div>
+            <span class="text-[11px] text-slate-400 font-bold block mb-1.5">Eigene Haut zusammenstellen (20 Segmente):</span>
+            <div id="segment-pickers" class="flex gap-1.5 overflow-x-auto pb-2 custom-scroll">
+            </div>
+          </div>
         </div>
       </div>
 
@@ -268,7 +275,7 @@
     }
 
     // ==========================================
-    // EINSTELLUNGEN LOGIK
+    // EINSTELLUNGEN LOGIK & BOOST POSITION
     // ==========================================
     let soundEnabled = true;
     const settingsBtn = document.getElementById('settings-btn');
@@ -306,46 +313,14 @@
     updateBoostPosition(savedBoostPos);
 
     // ==========================================
-    // 30 FESTE FARBEN & ZWEI-FARBEN-FARBVERLAUF LOGIK
+    // SKIN MENÜ LOGIK WITH DUNKELBLAUER 3D PREVIEW
     // ==========================================
-    const FIXED_30_COLORS = [
-      "#ffffff", "#000000", "#ef4444", "#f97316", "#f59e0b", "#eab308",
-      "#84cc16", "#22c55e", "#10b981", "#14b8a6", "#06b6d4", "#0ea5e9",
-      "#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#d946ef", "#ec4899",
-      "#f43f5e", "#fb7185", "#38bdf8", "#34d399", "#a3e635", "#fde047",
-      "#fb923c", "#f87171", "#c084fc", "#818cf8", "#94a3b8", "#475569"
-    ];
-
     const NUM_CUSTOM_SEGMENTS = 20;
-    let selectedColor1 = "#06b6d4"; // Cyan
-    let selectedColor2 = "#10b981"; // Emerald
-    let activeColorSlot = 1; // 1 = Kopf, 2 = Schwanz
-    let playerSegmentColors = Array(NUM_CUSTOM_SEGMENTS).fill("#06b6d4");
+    let playerSegmentColors = Array(NUM_CUSTOM_SEGMENTS).fill('#1982c4');
+    let selectedPattern = 'none';
 
-    function hexToRgb(hex) {
-      hex = hex.replace('#', '');
-      if(hex.length === 3) hex = hex.split('').map(c => c+c).join('');
-      const bigint = parseInt(hex, 16);
-      return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
-    }
-
-    function rgbToHex(r, g, b) {
-      return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-    }
-
-    // Erzeugt sanften Farbverlauf aus 2 Farben über 20 Segmente
-    function recalculateGradient() {
-      const c1 = hexToRgb(selectedColor1);
-      const c2 = hexToRgb(selectedColor2);
-
-      for (let i = 0; i < NUM_CUSTOM_SEGMENTS; i++) {
-        const ratio = i / (NUM_CUSTOM_SEGMENTS - 1);
-        const r = Math.round(c1.r + ratio * (c2.r - c1.r));
-        const g = Math.round(c1.g + ratio * (c2.g - c1.g));
-        const b = Math.round(c1.b + ratio * (c2.b - c1.b));
-        playerSegmentColors[i] = rgbToHex(r, g, b);
-      }
-      updatePreviewSkin();
+    for(let i = 0; i < NUM_CUSTOM_SEGMENTS; i++) {
+      playerSegmentColors[i] = (i % 2 === 0) ? '#06b6d4' : '#10b981';
     }
 
     const skinModal = document.getElementById('skin-modal');
@@ -357,13 +332,6 @@
     const tabCustomBtn = document.getElementById('tab-custom-btn');
     const tabPresetsContent = document.getElementById('tab-presets-content');
     const tabCustomContent = document.getElementById('tab-custom-content');
-
-    const selectColor1Btn = document.getElementById('select-color1-btn');
-    const selectColor2Btn = document.getElementById('select-color2-btn');
-    const color1Preview = document.getElementById('color1-preview');
-    const color2Preview = document.getElementById('color2-preview');
-    const paletteLabel = document.getElementById('palette-label');
-    const colorPaletteContainer = document.getElementById('color-palette');
 
     openSkinBtn.addEventListener('click', () => {
       skinModal.classList.remove('hidden');
@@ -392,64 +360,101 @@
       tabPresetsBtn.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 active:bg-purple-600 active:text-white transition";
     });
 
-    selectColor1Btn.addEventListener('click', () => {
-      activeColorSlot = 1;
-      selectColor1Btn.className = "flex-1 py-2 px-3 rounded-xl border-2 border-cyan-400 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2";
-      selectColor2Btn.className = "flex-1 py-2 px-3 rounded-xl border-2 border-slate-700 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2";
-      paletteLabel.textContent = "Wähle die 1. Farbe (Kopf):";
-      paletteLabel.className = "text-[11px] font-bold text-cyan-300 block mb-2";
-    });
+    const segmentPickersContainer = document.getElementById('segment-pickers');
+    const patternSelect = document.getElementById('pattern-select');
 
-    selectColor2Btn.addEventListener('click', () => {
-      activeColorSlot = 2;
-      selectColor2Btn.className = "flex-1 py-2 px-3 rounded-xl border-2 border-emerald-400 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2";
-      selectColor1Btn.className = "flex-1 py-2 px-3 rounded-xl border-2 border-slate-700 bg-slate-800 text-xs font-bold text-center flex items-center justify-center gap-2";
-      paletteLabel.textContent = "Wähle die 2. Farbe (Schwanz):";
-      paletteLabel.className = "text-[11px] font-bold text-emerald-300 block mb-2";
-    });
+    function renderSegmentPickers() {
+      segmentPickersContainer.innerHTML = '';
+      playerSegmentColors.forEach((color, idx) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = "flex flex-col items-center flex-shrink-0 bg-slate-900 p-1.5 rounded-xl border border-slate-700";
+        
+        const label = document.createElement('span');
+        label.className = "text-[9px] font-bold text-slate-400 mb-1";
+        label.textContent = `#${idx + 1}`;
 
-    function render30ColorPalette() {
-      colorPaletteContainer.innerHTML = '';
-      FIXED_30_COLORS.forEach(hex => {
-        const btn = document.createElement('button');
-        btn.className = "w-8 h-8 rounded-xl border-2 border-slate-700 hover:scale-110 active:scale-95 transition shadow-md";
-        btn.style.backgroundColor = hex;
-        btn.addEventListener('click', () => {
-          if (activeColorSlot === 1) {
-            selectedColor1 = hex;
-            color1Preview.style.backgroundColor = hex;
-          } else {
-            selectedColor2 = hex;
-            color2Preview.style.backgroundColor = hex;
-          }
-          recalculateGradient();
+        const input = document.createElement('input');
+        input.type = 'color';
+        input.value = color;
+        input.className = "w-7 h-7 rounded-lg cursor-pointer bg-transparent border-0";
+        input.addEventListener('input', (e) => {
+          playerSegmentColors[idx] = e.target.value;
+          updatePreviewSkin();
         });
-        colorPaletteContainer.appendChild(btn);
+
+        wrapper.appendChild(label);
+        wrapper.appendChild(input);
+        segmentPickersContainer.appendChild(wrapper);
       });
     }
 
     document.querySelectorAll('.preset-skin-card').forEach(btn => {
       btn.addEventListener('click', () => {
+        const colors = btn.dataset.colors ? btn.dataset.colors.split(',') : null;
+        const pattern = btn.dataset.pattern || 'none';
         const isRainbow = btn.dataset.rainbow === 'true';
+
+        selectedPattern = pattern;
+        patternSelect.value = pattern;
+
         if (isRainbow) {
           for(let i = 0; i < NUM_CUSTOM_SEGMENTS; i++) {
             const hue = (i / NUM_CUSTOM_SEGMENTS) * 360;
             playerSegmentColors[i] = `hsl(${hue}, 90%, 55%)`;
           }
-        } else {
-          selectedColor1 = btn.dataset.color1 || "#06b6d4";
-          selectedColor2 = btn.dataset.color2 || "#10b981";
-          color1Preview.style.backgroundColor = selectedColor1;
-          color2Preview.style.backgroundColor = selectedColor2;
-          recalculateGradient();
-          return;
+        } else if (colors) {
+          for(let i = 0; i < NUM_CUSTOM_SEGMENTS; i++) {
+            playerSegmentColors[i] = colors[i % colors.length];
+          }
         }
+        renderSegmentPickers();
         updatePreviewSkin();
       });
     });
 
-    render30ColorPalette();
-    recalculateGradient();
+    document.getElementById('preset-stripes').addEventListener('click', () => {
+      for(let i = 0; i < NUM_CUSTOM_SEGMENTS; i++) {
+        playerSegmentColors[i] = (i % 2 === 0) ? '#06b6d4' : '#3b82f6';
+      }
+      renderSegmentPickers();
+      updatePreviewSkin();
+    });
+
+    document.getElementById('preset-rainbow').addEventListener('click', () => {
+      for(let i = 0; i < NUM_CUSTOM_SEGMENTS; i++) {
+        const hue = (i / NUM_CUSTOM_SEGMENTS) * 360;
+        playerSegmentColors[i] = `hsl(${hue}, 90%, 55%)`;
+      }
+      renderSegmentPickers();
+      updatePreviewSkin();
+    });
+
+    document.getElementById('preset-gradient').addEventListener('click', () => {
+      for(let i = 0; i < NUM_CUSTOM_SEGMENTS; i++) {
+        const ratio = i / NUM_CUSTOM_SEGMENTS;
+        const r = Math.floor(6 + ratio * (245 - 6));
+        const g = Math.floor(182 + ratio * (158 - 182));
+        const b = Math.floor(212 + ratio * (11 - 212));
+        playerSegmentColors[i] = `rgb(${r},${g},${b})`;
+      }
+      renderSegmentPickers();
+      updatePreviewSkin();
+    });
+
+    document.getElementById('preset-random').addEventListener('click', () => {
+      for(let i = 0; i < NUM_CUSTOM_SEGMENTS; i++) {
+        playerSegmentColors[i] = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+      }
+      renderSegmentPickers();
+      updatePreviewSkin();
+    });
+
+    patternSelect.addEventListener('change', (e) => {
+      selectedPattern = e.target.value;
+      updatePreviewSkin();
+    });
+
+    renderSegmentPickers();
 
     // ==========================================
     // DUNKELBLAUE 3D SKIN PREVIEW (HORIZONTAL & GRÖSSER)
@@ -468,6 +473,7 @@
       previewRenderer.setSize(w, h);
 
       previewScene = new THREE.Scene();
+      // Dunkelblauer Hintergrund für das Vorschaufeld
       previewScene.background = new THREE.Color("#090d16");
 
       previewCamera = new THREE.PerspectiveCamera(38, w / h, 0.1, 100);
@@ -492,16 +498,20 @@
       const numSegments = 10;
       for (let i = 0; i < numSegments; i++) {
         const colorHex = playerSegmentColors[i % NUM_CUSTOM_SEGMENTS];
-        const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(colorHex), roughness: 0.25 });
+        const texture = createSegmentTexture(colorHex, selectedPattern);
+        const mat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.25 });
         
+        // Größerer Wurm für die flache Box
         const geo = new THREE.SphereGeometry(0.65, 16, 16);
         const mesh = new THREE.Mesh(geo, mat);
 
+        // Der Kopf ist das erste Segment (ganz rechts)
         if (i === 0) {
           const eyeGeo = new THREE.SphereGeometry(0.15, 8, 8);
           const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
           const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
 
+          // Augen nach RECHTS ausgerichtet (Blick nach vorne in Bewegungsrichtung)
           const eyeLeft = new THREE.Mesh(eyeGeo, eyeMat);
           eyeLeft.position.set(0.35, 0.28, 0.35);
           mesh.add(eyeLeft);
@@ -530,9 +540,10 @@
       previewAnimId = requestAnimationFrame(animateSkinPreview);
       const time = Date.now() * 0.0035;
 
+      // Horizontale Bewegung von Links nach Rechts mit Wellenbewegung
       previewWormSegments.forEach((seg, i) => {
-        const x = (4 - i) * 0.72;
-        const y = Math.sin(time - i * 0.4) * 0.55;
+        const x = (4 - i) * 0.72; // Kopf rechts, Schwanz links
+        const y = Math.sin(time - i * 0.4) * 0.55; // Sanfte Wellenbewegung auf der Y-Achse
         seg.position.set(x, y, 0);
       });
 
@@ -543,6 +554,59 @@
 
     function stopSkinPreview() {
       if (previewAnimId) cancelAnimationFrame(previewAnimId);
+    }
+
+    // ==========================================
+    // TEXTURE GENERATOR
+    // ==========================================
+    const textureCache = {};
+
+    function createSegmentTexture(baseColorHex, patternType) {
+      const cacheKey = `${baseColorHex}_${patternType}`;
+      if (textureCache[cacheKey]) return textureCache[cacheKey];
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = baseColorHex;
+      ctx.fillRect(0, 0, 256, 256);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 12;
+
+      if (patternType === 'circle') {
+        ctx.beginPath();
+        ctx.arc(128, 128, 60, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (patternType === 'trapezoid') {
+        ctx.beginPath();
+        ctx.moveTo(64, 180);
+        ctx.lineTo(192, 180);
+        ctx.lineTo(160, 76);
+        ctx.lineTo(96, 76);
+        ctx.closePath();
+        ctx.fill();
+      } else if (patternType === 'triangle') {
+        ctx.beginPath();
+        ctx.moveTo(128, 50);
+        ctx.lineTo(200, 190);
+        ctx.lineTo(56, 190);
+        ctx.closePath();
+        ctx.fill();
+      } else if (patternType === 'stripes') {
+        ctx.fillRect(0, 40, 256, 40);
+        ctx.fillRect(0, 160, 256, 40);
+      } else if (patternType === 'checker') {
+        ctx.fillRect(0, 0, 128, 128);
+        ctx.fillRect(128, 128, 128, 128);
+      }
+
+      const texture = new THREE.CanvasTexture(canvas);
+      textureCache[cacheKey] = texture;
+      return texture;
     }
 
     // ==========================================
@@ -705,9 +769,18 @@
     const BOT_NAMES = ["Alpha", "Vortex", "SlitherX", "Shadow", "NeonBug", "Viper", "Omega", "Phantom"];
     const BOT_COLORS = ["#ff595e", "#8ac926", "#6a4c93", "#ffca3a", "#ff924c"];
 
+    // 10 Verschiedene Farben für den Boost-Schleier (Aura)
     const BOOST_VEIL_COLORS = [
-      0x00ffff, 0xff00ff, 0xffff00, 0x00ff00, 0xff3366,
-      0x9933ff, 0xff6600, 0x00ffff, 0x33ff99, 0xffffff
+      0x00ffff, // Cyan
+      0xff00ff, // Magenta
+      0xffff00, // Gelb
+      0x00ff00, // Neon-Grün
+      0xff3366, // Pink-Rot
+      0x9933ff, // Lila
+      0xff6600, // Neon-Orange
+      0x00ffff, // Türkis
+      0x33ff99, // Mint
+      0xffffff  // Reines Leucht-Weiß
     ];
 
     function createRugTexture() {
@@ -821,7 +894,7 @@
 
         const headColorHex = isPlayer ? playerSegmentColors[0] : color;
         const headMat = isPlayer 
-          ? new THREE.MeshStandardMaterial({ color: new THREE.Color(headColorHex), roughness: 0.3 })
+          ? new THREE.MeshStandardMaterial({ map: createSegmentTexture(headColorHex, selectedPattern), roughness: 0.3 })
           : new THREE.MeshStandardMaterial({ color: new THREE.Color(color), roughness: 0.2 });
 
         const headGeo = new THREE.SphereGeometry(0.5, 16, 16);
@@ -831,7 +904,7 @@
         this.meshGroup.add(headMesh);
         this.segments.push(headMesh);
 
-        // Augen
+        // Augen für dynamische Blicke
         const eyeGeo = new THREE.SphereGeometry(0.12, 8, 8);
         const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
         const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
@@ -873,7 +946,8 @@
         let bodyMat;
         if (this.isPlayer) {
           const colorHex = playerSegmentColors[(segIdx - 1) % NUM_CUSTOM_SEGMENTS];
-          bodyMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(colorHex), roughness: 0.3 });
+          const texture = createSegmentTexture(colorHex, selectedPattern);
+          bodyMat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.3 });
         } else {
           bodyMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(this.color), roughness: 0.3 });
         }
@@ -1363,7 +1437,7 @@
       renderer.render(scene, camera);
     }
 
-    // SPIEL START & OVER
+    // SPIEL START & OVER (720 FUTTERTEILE ZUM START)
     function startGame() {
       const name = nameInput.value.trim() || 'WurmPlayer';
       localStorage.setItem('worm_player_name', name);
